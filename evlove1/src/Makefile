@@ -19,7 +19,7 @@ ${TARGET}: ${OBJ} ${OBJ_DIR}/prop.lemon.o
 
 ${OBJ_DIR}/%.o:%.c lex.yy.h token.h ${INC}
 	@echo "Compiling $< ==> $@"
-	${CC} ${CCFLAGS} -c $< -o $@
+	${CC} ${CCFLAGS}  -c $< -o $@
 	
 ${OBJ_DIR}/prop.lemon.o:prop.lemon.c
 

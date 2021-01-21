@@ -21,11 +21,13 @@ typedef unsigned short u16;
 #define PROP_SYMB 1
 #define PROP_NEG  2
 #define PROP_IMPL 3
+#define PROP_EXIST 4
 
 #define OP_IMPL 0
 #define OP_MP 1
 #define OP_HS 2
 #define OP_ADD 3
+#define OP_LINE 4
 
 #define log_a(format,...)   printf(format"\n",## __VA_ARGS__)
 #define log_c(format,...)   printf(format,## __VA_ARGS__)
@@ -41,13 +43,13 @@ struct TokenInfo{
     TokenInfo *pRight;
     TokenInfo *pTheorem;
     TokenInfo *pDeduce;
+    u32 val;
     u8 op;
     u8 type;
-    u8 bSubst;
-    u8 isRightTheorem;//1:右边是定理
-    u8 iRight;
-    u8 isDeduction:4;
-    u8 isNewTemp:4;
+    u8 bSubst:2;
+    u8 bExist:2;
+    u8 isDeduction:2;
+    u8 isNewTemp:2;
     char symb;
     char copy;
 #ifdef FREE_TEST

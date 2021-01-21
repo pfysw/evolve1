@@ -95,7 +95,7 @@
 #endif
 /************* Begin control #defines *****************************************/
 #define YYCODETYPE unsigned char
-#define YYNOCODE 9
+#define YYNOCODE 10
 #define YYACTIONTYPE unsigned char
 #define PropParseTOKENTYPE  TokenInfo* 
 typedef union {
@@ -115,18 +115,18 @@ typedef union {
 #define PropParseCTX_PARAM
 #define PropParseCTX_FETCH
 #define PropParseCTX_STORE
-#define YYNSTATE             7
-#define YYNRULE              5
-#define YYNRULE_WITH_ACTION  5
-#define YYNTOKEN             7
-#define YY_MAX_SHIFT         6
-#define YY_MIN_SHIFTREDUCE   11
-#define YY_MAX_SHIFTREDUCE   15
-#define YY_ERROR_ACTION      16
-#define YY_ACCEPT_ACTION     17
-#define YY_NO_ACTION         18
-#define YY_MIN_REDUCE        19
-#define YY_MAX_REDUCE        23
+#define YYNSTATE             8
+#define YYNRULE              6
+#define YYNRULE_WITH_ACTION  6
+#define YYNTOKEN             8
+#define YY_MAX_SHIFT         7
+#define YY_MIN_SHIFTREDUCE   13
+#define YY_MAX_SHIFTREDUCE   18
+#define YY_ERROR_ACTION      19
+#define YY_ACCEPT_ACTION     20
+#define YY_NO_ACTION         21
+#define YY_MIN_REDUCE        22
+#define YY_MAX_REDUCE        27
 /************* End control #defines *******************************************/
 #define YY_NLOOKAHEAD ((int)(sizeof(yy_lookahead)/sizeof(yy_lookahead[0])))
 
@@ -193,29 +193,30 @@ typedef union {
 **  yy_default[]       Default action for each state.
 **
 *********** Begin parsing tables **********************************************/
-#define YY_ACTTAB_COUNT (13)
+#define YY_ACTTAB_COUNT (15)
 static const YYACTIONTYPE yy_action[] = {
- /*     0 */    17,    5,    1,    3,    2,   22,   15,   13,    3,    4,
- /*    10 */     6,   20,   19,
+ /*     0 */    20,    6,    2,    1,    4,    3,   26,   18,   25,   15,
+ /*    10 */     5,    4,   22,   23,    7,
 };
 static const YYCODETYPE yy_lookahead[] = {
- /*     0 */     7,    8,    2,    1,    4,    8,    6,    5,    1,    8,
- /*    10 */     3,    8,    0,    9,    9,    9,    9,    9,    9,    9,
+ /*     0 */     8,    9,    2,    3,    1,    5,    9,    7,    9,    6,
+ /*    10 */     9,    1,    0,    9,    4,   10,   10,   10,   10,   10,
+ /*    20 */    10,    8,    8,
 };
-#define YY_SHIFT_COUNT    (6)
+#define YY_SHIFT_COUNT    (7)
 #define YY_SHIFT_MIN      (0)
 #define YY_SHIFT_MAX      (12)
 static const unsigned char yy_shift_ofst[] = {
- /*     0 */     0,    0,    0,    0,    2,    7,   12,
+ /*     0 */     0,    0,    0,    0,    0,    3,   10,   12,
 };
-#define YY_REDUCE_COUNT (3)
-#define YY_REDUCE_MIN   (-7)
-#define YY_REDUCE_MAX   (3)
+#define YY_REDUCE_COUNT (4)
+#define YY_REDUCE_MIN   (-8)
+#define YY_REDUCE_MAX   (4)
 static const signed char yy_reduce_ofst[] = {
- /*     0 */    -7,   -3,    1,    3,
+ /*     0 */    -8,   -3,   -1,    1,    4,
 };
 static const YYACTIONTYPE yy_default[] = {
- /*     0 */    16,   16,   16,   16,   16,   16,   16,
+ /*     0 */    19,   19,   19,   19,   19,   19,   19,   19,
 };
 /********** End of lemon-generated parsing tables *****************************/
 
@@ -325,12 +326,13 @@ static const char *const yyTokenName[] = {
   /*    0 */ "$",
   /*    1 */ "TK_IMPL",
   /*    2 */ "TK_NEG",
-  /*    3 */ "TK_SEM",
-  /*    4 */ "TK_LPAREN",
-  /*    5 */ "TK_RPAREN",
-  /*    6 */ "TK_SYM",
-  /*    7 */ "program",
-  /*    8 */ "expr",
+  /*    3 */ "TK_UNARY",
+  /*    4 */ "TK_SEM",
+  /*    5 */ "TK_LPAREN",
+  /*    6 */ "TK_RPAREN",
+  /*    7 */ "TK_SYM",
+  /*    8 */ "program",
+  /*    9 */ "expr",
 };
 #endif /* defined(YYCOVERAGE) || !defined(NDEBUG) */
 
@@ -342,7 +344,8 @@ static const char *const yyRuleName[] = {
  /*   1 */ "expr ::= expr TK_IMPL expr",
  /*   2 */ "expr ::= TK_LPAREN expr TK_RPAREN",
  /*   3 */ "expr ::= TK_NEG expr",
- /*   4 */ "expr ::= TK_SYM",
+ /*   4 */ "expr ::= TK_UNARY expr",
+ /*   5 */ "expr ::= TK_SYM",
 };
 #endif /* NDEBUG */
 
@@ -754,11 +757,12 @@ static void yy_shift(
 /* For rule J, yyRuleInfoLhs[J] contains the symbol on the left-hand side
 ** of that rule */
 static const YYCODETYPE yyRuleInfoLhs[] = {
-     7,  /* (0) program ::= expr TK_SEM */
-     8,  /* (1) expr ::= expr TK_IMPL expr */
-     8,  /* (2) expr ::= TK_LPAREN expr TK_RPAREN */
-     8,  /* (3) expr ::= TK_NEG expr */
-     8,  /* (4) expr ::= TK_SYM */
+     8,  /* (0) program ::= expr TK_SEM */
+     9,  /* (1) expr ::= expr TK_IMPL expr */
+     9,  /* (2) expr ::= TK_LPAREN expr TK_RPAREN */
+     9,  /* (3) expr ::= TK_NEG expr */
+     9,  /* (4) expr ::= TK_UNARY expr */
+     9,  /* (5) expr ::= TK_SYM */
 };
 
 /* For rule J, yyRuleInfoNRhs[J] contains the negative of the number
@@ -768,7 +772,8 @@ static const signed char yyRuleInfoNRhs[] = {
    -3,  /* (1) expr ::= expr TK_IMPL expr */
    -3,  /* (2) expr ::= TK_LPAREN expr TK_RPAREN */
    -2,  /* (3) expr ::= TK_NEG expr */
-   -1,  /* (4) expr ::= TK_SYM */
+   -2,  /* (4) expr ::= TK_UNARY expr */
+   -1,  /* (5) expr ::= TK_SYM */
 };
 
 static void yy_accept(yyParser*);  /* Forward Declaration */
@@ -859,55 +864,64 @@ static YYACTIONTYPE yy_reduce(
 /********** Begin reduce actions **********************************************/
         YYMINORTYPE yylhsminor;
       case 0: /* program ::= expr TK_SEM */
-#line 21 "prop.lemon.y"
+#line 22 "prop.lemon.y"
 {
     pParse->pRoot = yymsp[-1].minor.yy0;
     FreeAstNode(pParse,yymsp[0].minor.yy0);
 	//printf(" result!\n");
 	//PrintAst(pParse,yymsp[-1].minor.yy0);
 }
-#line 870 "prop.lemon.c"
+#line 875 "prop.lemon.c"
         break;
       case 1: /* expr ::= expr TK_IMPL expr */
-#line 28 "prop.lemon.y"
+#line 29 "prop.lemon.y"
 {
 	yylhsminor.yy0 = NewNode(pParse);
 	SetSymb(pParse,yymsp[-1].minor.yy0);
 	SetImplExpr(pParse,yylhsminor.yy0,yymsp[-2].minor.yy0,yymsp[0].minor.yy0,yymsp[-1].minor.yy0);
 	FreeAstNode(pParse,yymsp[-1].minor.yy0);
 }
-#line 880 "prop.lemon.c"
+#line 885 "prop.lemon.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 2: /* expr ::= TK_LPAREN expr TK_RPAREN */
-#line 34 "prop.lemon.y"
+#line 35 "prop.lemon.y"
 {
 	yylhsminor.yy0 = yymsp[-1].minor.yy0;
 	FreeAstNode(pParse,yymsp[-2].minor.yy0);
 	FreeAstNode(pParse,yymsp[0].minor.yy0);
 }
-#line 890 "prop.lemon.c"
+#line 895 "prop.lemon.c"
   yymsp[-2].minor.yy0 = yylhsminor.yy0;
         break;
       case 3: /* expr ::= TK_NEG expr */
-#line 39 "prop.lemon.y"
+#line 41 "prop.lemon.y"
 {
 	yylhsminor.yy0 = NewNode(pParse);
 	SetNegExpr(pParse,yylhsminor.yy0,yymsp[0].minor.yy0);
-	FreeAstNode(pParse,yymsp[-1].minor.yy0);
-	
+	FreeAstNode(pParse,yymsp[-1].minor.yy0);	
 }
-#line 901 "prop.lemon.c"
+#line 905 "prop.lemon.c"
   yymsp[-1].minor.yy0 = yylhsminor.yy0;
         break;
-      case 4: /* expr ::= TK_SYM */
-#line 45 "prop.lemon.y"
+      case 4: /* expr ::= TK_UNARY expr */
+#line 47 "prop.lemon.y"
+{
+    SetExprFlag(pParse,yymsp[0].minor.yy0,yymsp[-1].minor.yy0);
+    yylhsminor.yy0 = yymsp[0].minor.yy0;
+	FreeAstNode(pParse,yymsp[-1].minor.yy0);	
+}
+#line 915 "prop.lemon.c"
+  yymsp[-1].minor.yy0 = yylhsminor.yy0;
+        break;
+      case 5: /* expr ::= TK_SYM */
+#line 53 "prop.lemon.y"
 { 
 	yylhsminor.yy0 = yymsp[0].minor.yy0;
 	SetSymb(pParse,yymsp[0].minor.yy0);
 	//PrintAst(pParse,yylhsminor.yy0);
 }
-#line 911 "prop.lemon.c"
+#line 925 "prop.lemon.c"
   yymsp[0].minor.yy0 = yylhsminor.yy0;
         break;
       default:
@@ -970,11 +984,11 @@ static void yy_syntax_error(
   PropParseCTX_FETCH
 #define TOKEN yyminor
 /************ Begin %syntax_error code ****************************************/
-#line 16 "prop.lemon.y"
+#line 17 "prop.lemon.y"
 
 printf(" Syntax error!\n");
 exit(0);
-#line 978 "prop.lemon.c"
+#line 992 "prop.lemon.c"
 /************ End %syntax_error code ******************************************/
   PropParseARG_STORE /* Suppress warning about unused %extra_argument variable */
   PropParseCTX_STORE

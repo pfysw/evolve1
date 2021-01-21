@@ -72,5 +72,6 @@ void WritePropStr(
         TokenInfo *pC,
         char *op);
 void WriteAxiomStr(AstParse *pParse,TokenInfo *pA);
+void SetExprFlag(AstParse *pParse,TokenInfo *pB,TokenInfo *pC);
 
 #endif /* AST_H_ */

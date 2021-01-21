@@ -23,6 +23,9 @@ void PrintAst(AstParse *pParse,TokenInfo *pAst)
     assert(pAst!=NULL);
     if( pAst->type==PROP_SYMB )
     {
+        if(pAst->bExist){
+            log_c("exist ");
+        }
         if(pAst->zSymb!=NULL){
             log_c("%s",pAst->zSymb);
         }
@@ -44,6 +47,9 @@ void PrintAst(AstParse *pParse,TokenInfo *pAst)
         //log_c("->");
         if(pAst->zSymb!=NULL){
             log_c("%s",pAst->zSymb);
+            if(pAst->nSymbLen>2){
+                log_c(" ");
+            }
         }
         else{
             log_c("->");
@@ -171,7 +177,8 @@ TokenInfo *NewNode(AstParse *pParse)
 #ifdef FREE_TEST
     p->malloc_flag = pParse->malloc_cnt;
     testbuf[pParse->malloc_cnt] = 1;
-    if(pParse->malloc_cnt==2282){
+    if(pParse->malloc_cnt==9)
+    {
         printf("newnode %d\n",pParse->malloc_cnt);
     }
 #endif
@@ -179,7 +186,7 @@ TokenInfo *NewNode(AstParse *pParse)
 }
 void FreeAstNode(AstParse *pParse,TokenInfo *p)
 {
-    if(pParse->free_cnt==2261)
+    if(pParse->free_cnt==1700)
     {
         printf("sd %d\n",pParse->free_cnt);
     }
@@ -334,6 +341,7 @@ AstParse *CreatAstParse(void){
         pParse->apAxiom[i]->nSymbLen = 1;
         NewSymbString(pParse,pParse->apAxiom[i]);
     }
+    pParse->ppTemp = (TokenInfo **)malloc(100*sizeof(TokenInfo *));
 
     return pParse;
 }
@@ -343,6 +351,7 @@ void CloseAstParse(AstParse *pParse)
     sqlite3_close(pParse->pDb->db);
     free(pParse->pDb);
     free(pParse);
+    free(pParse->ppTemp);
 }
 
 void WritePropStr(
@@ -395,6 +404,13 @@ TokenInfo * NewNegNode(AstParse *pParse,TokenInfo *pB)
     return pA;
 }
 
+void SetExprFlag(AstParse *pParse,TokenInfo *pB,TokenInfo *pC)
+{
+    if(!memcmp(pC->zSymb,"exist",pC->nSymbLen)){
+        pB->bExist = 1;
+    }
+}
+
 void SetImplExpr(
         AstParse *pParse,
         TokenInfo *pA,
@@ -403,9 +419,6 @@ void SetImplExpr(
         TokenInfo *pD)
 {
     if(pD!=NULL){
-        pA->zSymb = pD->zSymb;
-        pA->nSymbLen = pD->nSymbLen;
-        NewSymbString(pParse,pA);
         //printf("zSymb %s",pD->zSymb);
         if(!strcmp(pD->zSymb,"->")){
             pA->op = OP_IMPL;
@@ -420,9 +433,23 @@ void SetImplExpr(
             pA->op = OP_ADD;
             pA->isDeduction = 1;
         }
+        else if(!strcmp(pD->zSymb,"-")){
+            pA->op = OP_LINE;
+        }
+        else if(!strcmp(pD->zSymb,"val")){
+            pB->val = atoi(pC->zSymb);
+            pA->val = pB->val;
+//            FreeAstNode(pParse,pA);
+//            FreeAstNode(pParse,pC);
+//            printf("val %d\n",pB->val);
+//            return pB;
+        }
         else{
             assert(0);
         }
+        pA->zSymb = pD->zSymb;
+        pA->nSymbLen = pD->nSymbLen;
+        NewSymbString(pParse,pA);
         //pB->op = pA->op;
         //pC->op = pA->op;
     }

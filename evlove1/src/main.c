@@ -65,6 +65,7 @@ void Token2AstTree(
     zSymb = yyget_text(scanner);
     while (token)
     {
+        //printf("symb %s token %d\n",zSymb,token);
         pToken->zSymb = zSymb;
         pToken->nSymbLen = yyget_leng(scanner);
         pToken->symb = pToken->zSymb[0];
@@ -73,8 +74,8 @@ void Token2AstTree(
         if( token==TK_SEM )
         {
             PropParse(pLemon, 0, 0,pParse);
-//           log_a("----- %d -----",idx);
-//           PrintAst(pParse,pParse->pRoot);//
+           log_a("----- %d -----",idx);
+           PrintAst(pParse,pParse->pRoot);//
             idx++;
             InsertVector(pV,pParse->pRoot);
         }
@@ -130,10 +131,12 @@ int main(int argc, char** argv)
 
    //GenBasicProp(pParse);
   // SubstSingleTest(pParse,theoremset.data);
-   SubstMpTest(pParse,pSet);
+   //SubstMpTest(pParse,pSet);
+   FreeVector(pParse,pSet);
    for(int i=0;i<3;i++){
        FreeAstNode(pParse,pParse->apAxiom[i]);
    }
+
    log_a("malloc %d free %d",pParse->malloc_cnt,
            pParse->free_cnt);
 #ifdef FREE_TEST
@@ -146,6 +149,8 @@ int main(int argc, char** argv)
 #endif
    CloseAstParse(pParse);
    printf("%ld\n",sizeof(TokenInfo));
+   //db_test();
+   //mmap_demo();
    return 0;
 }
 

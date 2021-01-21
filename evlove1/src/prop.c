@@ -731,15 +731,15 @@ void  SubstSingleTest(AstParse *pParse,TokenInfo **ppTest)
 void  SubstMpTest(AstParse *pParse,Vector *pSet)
 {
     int i;
-    TokenInfo *ppTemp[100];//存在递归时的共享变量
     TokenInfo *pR;//
     TokenInfo *pDemo;
     TokenInfo *pLeft;
     TokenInfo **ppTest = pSet->data;
     TokenInfo **ppDbSet;
     Vector *pVec;
+    TokenInfo **ppTemp;//存在递归时的共享变量
 
-    pParse->ppTemp = ppTemp;
+    ppTemp = pParse->ppTemp;
     for(i=0; i<3; i++)
     {
         SetSameNode(pParse,&ppTest[i],ppTemp);
@@ -848,8 +848,5 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
     }
     FreeAstTree(pParse,&pDemo,ppTemp);
 #endif
-    FreeVector(pParse,pSet);
     FreeVector(pParse,pVec);
-    pParse->ppTemp = NULL;
-
 }

@@ -48,5 +48,6 @@ int SetSameNode(
         TokenInfo **ppAst,
         TokenInfo **ppTemp);
 int isChildProp(AstParse *pParse,TokenInfo *pProp,TokenInfo *pSym);
+void FreeVector(AstParse *pParse,Vector *pV);
 
 #endif /* PROP_H_ */

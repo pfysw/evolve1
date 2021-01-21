@@ -143,8 +143,9 @@ int backupDb(
 int select_callback(void * data, int col_count, char ** col_values, char ** col_Name)
 {
   // 每条记录回调一次该函数,有多少条就回调多少次
-  printf( "%s = %s\n",col_values[0],col_values[1] );
-
+  printf( "%s = %s\n",col_Name[0],col_values[0] );
+//  int x = atoi(col_values[0]);
+//  printf("0x%x\n",x);
   return 1;
 }
 
@@ -162,9 +163,11 @@ sqlite3 * CreatSqliteConn(char *db_name)
     {
         //printf("存在 退出\n");
        // exit(0);
-//        printf("存在 删除\n");
-//        remove(db_name);
-//        sleep(1);
+#if !WRITE_DISABLE
+        printf("存在 删除\n");
+        remove(db_name);
+        sleep(1);
+#endif
     }
     rc = sqlite3_open(db_name, &db);
     if( rc != SQLITE_OK ) {
@@ -179,6 +182,74 @@ sqlite3 * CreatSqliteConn(char *db_name)
       sqlite3_free(pErrMsg);
     }
     return db;
+}
+
+extern int dll_test();
+void SqliteReadDemo(sqlite3 *db,char *zSql);
+int sqlite3OsOpen(
+  sqlite3_vfs *pVfs,
+  const char *zPath,
+  sqlite3_file *pFile,
+  int flags,
+  int *pFlagsOut
+);
+
+void db_test()
+{
+    sqlite3 *db = 0;
+    int rc = 0;
+    rc = sqlite3_open(":memory:", &db);
+    char sSql[SQL_LEN] = {0};
+    char * pErrMsg = 0;
+    sprintf(sSql,"CREATE TABLE TheoremSet(a INTEGER)");
+    rc = sqlite3_exec( db, sSql, 0, 0, &pErrMsg );
+    if(rc!= SQLITE_OK ){
+      fprintf(stderr, "CREATE TABLE error[%d]: %s\n",rc, pErrMsg);
+      sqlite3_free(pErrMsg);
+    }
+    sprintf(sSql,"INSERT INTO TheoremSet VALUES(%p)",&db);
+    rc = sqlite3_exec( db, sSql, 0, 0, &pErrMsg );
+    if(rc!= SQLITE_OK ){
+      fprintf(stderr, "insert error[%d]: %s\n",rc, pErrMsg);
+      sqlite3_free(pErrMsg);
+    }
+//    SqliteReadDemo(db,"SELECT * FROM TheoremSet");
+//    int ss;
+//    u32 s;
+//    printf("db %p ss %d\n",&db,sizeof(ss));
+
+       sqlite3_int64 addr;
+       sqlite3_stmt *pstmt;
+       const char *sql = "SELECT * FROM TheoremSet";
+       rc = sqlite3_prepare_v2(db, sql, strlen(sql), &pstmt, 0);
+
+       while(sqlite3_step( pstmt ) == SQLITE_ROW){
+           addr = sqlite3_column_int64(pstmt, 0);
+           printf("0x%llx %p\n", addr,&db);
+       }
+       sqlite3_finalize(pstmt);
+       printf("a %p sql %s\n", &pstmt,sql);
+       memcpy(&db,&addr,8);
+       printf("b %p sql %s\n", &pstmt,sql);
+       rc = sqlite3_prepare_v2(db, sql, strlen(sql), &pstmt, 0);
+       printf("rc %d\n",rc);
+       while(sqlite3_step( pstmt ) == SQLITE_ROW){
+           addr = sqlite3_column_int64(pstmt, 0);
+           printf("0x%llx %p\n", addr,&db);
+       }
+       sqlite3_finalize(pstmt);
+//       extern int sqlite3OsShmMap(sqlite3_file *,int,int,int,void volatile **);
+//       sqlite3OsShmMap(0,0,0,0,0);
+      // dll_test();
+//       sqlite3OsOpen(0,0,0,0,0);
+//       extern int sqlite3OsShmMap(
+//         sqlite3_file *id,               /* Database file handle */
+//         int iPage,
+//         int pgsz,
+//         int bExtend,                    /* True to extend file if necessary */
+//         void volatile **pp              /* OUT: Pointer to mapping */
+//       );
+//       sqlite3OsShmMap(0,0,0,0,0);
 }
 
 
@@ -276,12 +347,10 @@ void WriteAxiomToDb(AstParse *pParse,char *zProp)
     sqlite3_reset(stmt);
 }
 
-void SqliteReadDemo(AstParse *pParse,sqlite3 *db,char *table)
+void SqliteReadDemo(sqlite3 *db,char *zSql)
 {
     char * pErrMsg = 0;
-    char sql[SQL_LEN] = {0};
-    sprintf(sql,"select rowid,gen from %s ORDER BY rowid",table);
-    sqlite3_exec( db, sql, select_callback, 0, &pErrMsg);
+    sqlite3_exec( db, zSql, select_callback, 0, &pErrMsg);
 }
 
 void SqliteReadTable(AstParse *pParse,sqlite3 *db,char *table,Vector *pV)

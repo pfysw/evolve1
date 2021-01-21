@@ -12,6 +12,7 @@
 
 %left TK_IMPL.
 %left TK_NEG.
+%left TK_UNARY.
 
 %syntax_error {
 printf(" Syntax error!\n");
@@ -36,12 +37,19 @@ expr(A) ::= TK_LPAREN(C) expr(B) TK_RPAREN(D). {
 	FreeAstNode(pParse,C);
 	FreeAstNode(pParse,D);
 }
+
 expr(A) ::= TK_NEG(C) expr(B). {
 	A = NewNode(pParse);
 	SetNegExpr(pParse,A,B);
-	FreeAstNode(pParse,C);
-	
+	FreeAstNode(pParse,C);	
 }
+
+expr(A) ::= TK_UNARY(C) expr(B). {
+    SetExprFlag(pParse,B,C);
+    A = B;
+	FreeAstNode(pParse,C);	
+}
+
 expr(A) ::= TK_SYM(B). { 
 	A = B;
 	SetSymb(pParse,B);
