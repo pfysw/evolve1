@@ -8,32 +8,41 @@
 #ifndef GEOMETRY_H_
 #define GEOMETRY_H_
 #include "ast.h"
+#include "prop.h"
 
-
-typedef struct LineToken LineToken;
-typedef struct PointToken PointToken;
-typedef struct AngleToken AngleToken;
-typedef struct LineSegment LineSegment;
-
-struct PointToken{
-    AngleToken *pAngle;
+typedef struct PoinData PoinData;
+typedef struct LinePoint LinePoint;
+struct LinePoint
+{
+    LinePoint *pLeft;
+    LinePoint *pRigth;
 };
 
-struct LineToken{
+
+typedef struct LineHash LineData;
+struct LineData
+{
+    TokenInfo *pPoint;
 };
 
-struct LineSegment{
-    int length;
-    LineToken *pLine;
-    PointToken *pPoint1;
-    PointToken *pPoint2;
+struct PoinData
+{
+    int iNum;
+    int nHash;
+    char *zSymb;
+    LineData **ppHash;
 };
 
-struct AngleToken{
-    int angle;
-    PointToken *pPoint;
-    LineToken *pLine1;
-    LineToken *pLine2;
+typedef struct PointHash PointHash;
+struct PointHash
+{
+    int nHash;
+    int nPoint;
+    PoinData **ppHash;
+    PoinData **ppArray;
 };
+
+PointHash *CreatPointHash(int nSlot);
+void ParseGeomEle(AstParse *pParse,Vector *pSet);
 
 #endif /* GEOMETRY_H_ */

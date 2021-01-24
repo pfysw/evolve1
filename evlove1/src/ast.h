@@ -12,6 +12,7 @@
 
 #define PROP_STR_LEN 200
 typedef struct DbInfo DbInfo;
+typedef struct PointHash PointHash;
 
 typedef struct AstParse AstParse;
 struct AstParse
@@ -21,6 +22,7 @@ struct AstParse
     TokenInfo **ppTemp;//存在递归时的共享变量
     Mem5Global *pMem;
     DbInfo *pDb;
+    PointHash *pPointSet;
     u8 bDiscard;
     u8 usePool;
     int n;
@@ -62,8 +64,8 @@ TokenInfo * NewNegNode(AstParse *pParse,TokenInfo *pB);
 TokenInfo * NewSymbNode(AstParse *pParse,char *zSymb);
 TokenInfo * NewNumNode(AstParse *pParse,int num);
 
-void NewMemPool(AstParse *pParse,int len);
-void FreeMemPool(AstParse *pParse);
+Mem5Global * NewMemPool(AstParse *pParse,int len);
+void FreeMemPool(AstParse *pParse,Mem5Global **ppMem);
 void CloseAstParse(AstParse *pParse);
 void WritePropStr(
         AstParse *pParse,

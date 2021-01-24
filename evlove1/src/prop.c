@@ -753,7 +753,7 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
     BeginSqliteWrite(pParse);
     for(i=3;i<pParse->axiom_num;i++)
     {
-        NewMemPool(pParse,1000000);
+        pParse->pMem = NewMemPool(pParse,1000000);
         log_a("old i %d",i+1);
         if(i==18){
             printf("ss:%d\n",i+1);
@@ -774,11 +774,11 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
         log_a("new i %d",i+1);
         PrintAst(pParse,ppTest[i]);
         SetSameNode(pParse,&ppTest[i],ppTemp);
-        FreeMemPool(pParse);
+        FreeMemPool(pParse,&pParse->pMem);
     }
     for(; i<pParse->all_num; i++)
     {
-        NewMemPool(pParse,1000000);
+        pParse->pMem = NewMemPool(pParse,1000000);
         printf("num:%d\n",i+1);
         PrintAst(pParse,ppTest[i]);
         SetSameNode(pParse,&ppTest[i],ppTemp);
@@ -796,7 +796,7 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
         if(pR->pTheorem!=NULL){
             FreePropSeq(pParse,pR,ppTemp);
         }
-        FreeMemPool(pParse);
+        FreeMemPool(pParse,&pParse->pMem);
     }
     EndSqliteWrite(pParse);
 
@@ -806,21 +806,21 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
     ppDbSet = pVec->data;
     for(i=0; i<pVec->n; i++)
     {
-        NewMemPool(pParse,1000000);
+        pParse->pMem = NewMemPool(pParse,1000000);
         printf("row:%d\n",i+1);
         PrintAst(pParse,ppDbSet[i]);
         SetSameNode(pParse,&ppDbSet[i],ppTemp);
         pR = PropGenSeq(pParse,ppDbSet,ppDbSet[i]);
         printf("seq %d\n",i+1);
         PrintAst(pParse,pR);
-        FreeMemPool(pParse);
+        FreeMemPool(pParse,&pParse->pMem);
     }
    // pDemo = CopyAstTree(pParse,ppDbSet[56],0);
     pDemo = CopyAstTree(pParse,ppDbSet[31],0);
     PrintAst(pParse,pDemo);
     for(i=0; i<pVec->n; i++)
     {
-        NewMemPool(pParse,1000000);
+        pParse->pMem = NewMemPool(pParse,1000000);
         if(gDebug.mpLeftDebug){
             printf("mp left:%d\n",i+1);
             PrintAst(pParse,ppDbSet[i]);
@@ -844,7 +844,7 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
 
             FreeAstTree(pParse,&pR,ppTemp);
         }
-        FreeMemPool(pParse);
+        FreeMemPool(pParse,&pParse->pMem);
     }
     FreeAstTree(pParse,&pDemo,ppTemp);
 #endif

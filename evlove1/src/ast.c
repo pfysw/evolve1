@@ -10,6 +10,7 @@
 #include "ast.h"
 #include <assert.h>
 #include "db.h"
+#include "geometry.h"
 
 u8 testbuf[10000] = {0};
 void PrintAst(AstParse *pParse,TokenInfo *pAst)
@@ -333,6 +334,7 @@ AstParse *CreatAstParse(void){
     memset(pParse,0,sizeof(AstParse));
     pParse->pDb = (DbInfo*)malloc(sizeof(DbInfo));
     pParse->pDb->db = CreatSqliteConn("test.db");
+    pParse->pPointSet = CreatPointHash(128);
     for(i=0;i<3;i++){
         pParse->apAxiom[i] = NewNode(pParse);
         pParse->apAxiom[i]->symb = aNum[i];
@@ -349,9 +351,10 @@ AstParse *CreatAstParse(void){
 void CloseAstParse(AstParse *pParse)
 {
     sqlite3_close(pParse->pDb->db);
+    //todo close pPointSet
     free(pParse->pDb);
-    free(pParse);
     free(pParse->ppTemp);
+    free(pParse);
 }
 
 void WritePropStr(
@@ -376,15 +379,17 @@ void WriteAxiomStr(AstParse *pParse,TokenInfo *pA)
     WriteAxiomToDb(pParse,buf);
 }
 
-void NewMemPool(AstParse *pParse,int len)
+Mem5Global * NewMemPool(AstParse *pParse,int len)
 {
-    pParse->pMem = memsys5Init(len,16);
+    Mem5Global *pMem;
+    pMem = memsys5Init(len,16);
     pParse->malloc_cnt++;
+    return pMem;
 }
 
-void FreeMemPool(AstParse *pParse)
+void FreeMemPool(AstParse *pParse,Mem5Global **ppMem)
 {
-    memsys5Shutdown(&pParse->pMem);
+    memsys5Shutdown(ppMem);
     pParse->free_cnt++;
     //log_a("pool len %d",pParse->test);
     pParse->test = 0;

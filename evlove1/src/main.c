@@ -10,6 +10,7 @@
 #include "ast.h"
 #include "prop.h"
 #include "db.h"
+#include "geometry.h"
 
 
 extern Vector theoremset;
@@ -131,7 +132,9 @@ int main(int argc, char** argv)
 
    //GenBasicProp(pParse);
   // SubstSingleTest(pParse,theoremset.data);
-   //SubstMpTest(pParse,pSet);
+  // SubstMpTest(pParse,pSet);
+
+   ParseGeomEle(pParse,pSet);
    FreeVector(pParse,pSet);
    for(int i=0;i<3;i++){
        FreeAstNode(pParse,pParse->apAxiom[i]);
