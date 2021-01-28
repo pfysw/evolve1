@@ -13,6 +13,7 @@
 #define PROP_STR_LEN 200
 typedef struct DbInfo DbInfo;
 typedef struct PointHash PointHash;
+typedef struct LineHash LineHash;
 
 typedef struct AstParse AstParse;
 struct AstParse
@@ -23,6 +24,7 @@ struct AstParse
     Mem5Global *pMem;
     DbInfo *pDb;
     PointHash *pPointSet;
+    LineHash *pLineSet;
     u8 bDiscard;
     u8 usePool;
     int n;
