@@ -18,23 +18,26 @@ typedef struct PoinData PoinData;
 typedef struct LinePoint LinePoint;
 struct LinePoint
 {
-    LinePoint *pLeft;
-    LinePoint *pRigth;
+    LinePoint *pNext;
+    LinePoint *pPre;
+    PoinData *pPoint;
+    u8 isHead;
 };
 
 
-typedef struct LineHash LineData;
+typedef struct LineData LineData;
 struct LineData
 {
-    TokenInfo *pPoint;
+    int iNum;
+    LinePoint *pHead;
 };
 
 struct PoinData
 {
     int iNum;
-    int nHash;
+    int nArray;
     char *zSymb;
-    LineData **ppHash;
+    LineData **ppArray;
 };
 
 typedef struct PointHash PointHash;
@@ -50,9 +53,8 @@ struct PointHash
 typedef struct LineHash LineHash;
 struct LineHash
 {
-    int nHash;
     int nLine;
-    LineData **ppHash;
+    int nSlot;
     LineData **ppArray;
 };
 
@@ -62,8 +64,8 @@ struct GeomType
     u8 type;
     LineData *pLine1;
     LineData *pLine2;
-    PoinData *pLeft;
-    PoinData *pRight;
+    PoinData *pPoint1;
+    PoinData *pPoint2;
 };
 
 
