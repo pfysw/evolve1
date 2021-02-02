@@ -17,13 +17,11 @@ PointHash *CreatPointHash(int nSlot)
     int size;
     pPointSet = (PointHash *)malloc(sizeof(PointHash));
     memset(pPointSet,0,sizeof(PointHash));
-    pPointSet->nHash = nSlot;
-    if(nSlot<128){
-        pPointSet->nHash = 128;
-    }
-    size = sizeof(PointHash *)*pPointSet->nHash/2;
+    pPointSet->nHash = nSlot*2;
+    size = sizeof(PointHash *)*nSlot;
     pPointSet->ppArray = (PoinData **)malloc(size);
     memset(pPointSet->ppArray,0,size);
+    size = sizeof(PointHash *)*pPointSet->nHash;
     pPointSet->ppHash = (PoinData **)malloc(size);
     memset(pPointSet->ppHash,0,size);
     return pPointSet;
@@ -36,7 +34,7 @@ LineHash *CreatLineHash(int nSlot)
     pLineSet = (LineHash *)malloc(sizeof(LineHash));
     memset(pLineSet,0,sizeof(LineHash));
     size = sizeof(LineHash *)*nSlot;
-    pLineSet->nSlot;
+    pLineSet->nSlot = nSlot;
     pLineSet->ppArray = (LineData **)malloc(size);
     memset(pLineSet->ppArray,0,size);
     return pLineSet;
@@ -88,15 +86,6 @@ LinePoint *FindPointLoc(LinePoint *pHead,PoinData *pNode)
     return NULL;
 }
 
-void InsertLinePoint(
-        AstParse *pParse,
-        LineData *pLine,
-        PoinData *pLoc,
-        PoinData *pNode)
-{
-    LinePoint *pPre;
-    pPre = FindPointLoc(pLine->pHead,pLoc);
-}
 
 
 void SetLineArray(PoinData *pLeft,LineData *pLine,PoinData *pRight)
@@ -159,16 +148,24 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight,u8 op)
             iLeft = pLeft->pPoint1->iNum;
             iRight = pRight->pPoint1->iNum;
             if(iLeft>iRight){
-                assert(pLeft->pPoint1->ppArray[iRight]==NULL);
-                pLine = NewLineObj(pParse,pLeft->pPoint1,iRight);
-                InsertPointNode(pParse,pLine->pHead,pRight->pPoint1);
+                if(pLeft->pPoint1->ppArray[iRight]==NULL){
+                    pLine = NewLineObj(pParse,pLeft->pPoint1,iRight);
+                    InsertPointNode(pParse,pLine->pHead,pRight->pPoint1);
+                }
+                else{
+                    pLine = pLeft->pPoint1->ppArray[iRight];
+                }
                 ele.pPoint1 = pLeft->pPoint1;
                 ele.pPoint2 = pRight->pPoint1;
             }
             else{
-                assert(pRight->pPoint1->ppArray[iLeft]==NULL);
-                pLine = NewLineObj(pParse,pRight->pPoint1,iLeft);
-                InsertPointNode(pParse,pLine->pHead,pLeft->pPoint1);
+                if(pRight->pPoint1->ppArray[iLeft]==NULL){
+                    pLine = NewLineObj(pParse,pRight->pPoint1,iLeft);
+                    InsertPointNode(pParse,pLine->pHead,pLeft->pPoint1);
+                }
+                else{
+                    pLine = pRight->pPoint1->ppArray[iLeft];
+                }
                 ele.pPoint1 = pRight->pPoint1;
                 ele.pPoint2 = pLeft->pPoint1;
             }
@@ -193,8 +190,8 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight,u8 op)
         assert(pLeft->type==ELE_POINT && pRight->type==ELE_LINE);
         ele1 = GetPointEle(pRight->pPoint1);
         ele2 = GetPointEle(pRight->pPoint2);
-        ele1 = SetLineHash(pParse,pLeft,ele1,OP_LINE);
-        ele2 = SetLineHash(pParse,pLeft,ele2,OP_LINE);
+        ele1 = SetLineHash(pParse,pLeft,&ele1,OP_LINE);
+        ele2 = SetLineHash(pParse,pLeft,&ele2,OP_LINE);
         ele.type = ELE_ANGLE;
         ele.pPoint1 = pLeft->pPoint1;
         ele.pLine1 = ele1.pLine1;
@@ -250,6 +247,9 @@ GeomType SetGeomHash(AstParse *pParse,TokenInfo *pAst)
         if(memcmp(pAst->zSymb,"val",3)!=0){
             ele2 = SetGeomHash(pParse,pAst->pRight);
             ele = SetLineHash(pParse,&ele1,&ele2,pAst->op);
+        }
+        else{
+            assert(ele1.type==ELE_ANGLE);
         }
     }
     else
