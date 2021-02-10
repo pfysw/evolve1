@@ -489,9 +489,7 @@ void FreeVector(AstParse *pParse,Vector *pV)
     }
     pV->n = 0;
     Free(pV->data);
-    pParse->free_cnt++;
     Free(pV);
-    pParse->free_cnt++;
 }
 
 void ClearSubstFlag(AstParse *pParse,TokenInfo *pAst)
@@ -553,11 +551,9 @@ u8 aCnt[1000] = {0};
 Vector *InitTheoremSet(AstParse *pParse)
 {
     Vector *pSet = (Vector *)Malloc(sizeof(Vector));
-    pParse->malloc_cnt++;
     memset(pSet,0,sizeof(Vector));
     pSet->size = 100;
     pSet->data = Malloc(pSet->size*sizeof(TokenInfo **));
-    pParse->malloc_cnt++;
     return pSet;
 }
 

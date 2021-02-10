@@ -11,8 +11,6 @@
 #include <stdio.h>
 #include "prop.lemon.h"
 
-//#define FREE_TEST
-
 //#define TK_SEM 100
 typedef unsigned char  u8;
 typedef unsigned int   u32;
@@ -52,10 +50,6 @@ struct TokenInfo{
     u8 isNewTemp:2;
     char symb;
     char copy;
-#ifdef FREE_TEST
-    int malloc_flag;
-    int malloc_string;
-#endif
 };
 
 #endif /* TOKEN_H_ */

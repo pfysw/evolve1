@@ -22,9 +22,6 @@ struct LinePoint
     LinePoint *pPre;
     PoinData *pPoint;
     u8 isHead;
-#ifdef FREE_TEST
-    int malloc_flag;
-#endif
 };
 
 

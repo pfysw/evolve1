@@ -12,26 +12,31 @@
 #include "db.h"
 #include "geometry.h"
 
+//#define FREE_TEST
+
 MemInfo g_mem = {0};
-u8 testbuf[10000] = {0};
 
 void *addr_buf[1000] = {0};
 void* Malloc(u32 size){
     void *p = malloc(size);
+#ifdef FREE_TEST
     if(g_mem.malloc_cnt==64){
         printf("mal\n");
     }
     addr_buf[g_mem.malloc_cnt] = p;
+#endif
     g_mem.malloc_cnt++;
     return p;
 }
 void Free(void *p){
+#ifdef FREE_TEST
     for(int i=0;i<g_mem.malloc_cnt;i++){
         if(addr_buf[i]==p){
             addr_buf[i] = 0;
             break;
         }
     }
+#endif
     free(p);
     g_mem.free_cnt++;
 }
@@ -206,51 +211,19 @@ TokenInfo *NewNode(AstParse *pParse)
 {
     TokenInfo *p;
     p = (TokenInfo *)Malloc(sizeof(TokenInfo));
-    pParse->malloc_cnt++;
     memset(p,0,sizeof(TokenInfo));
-#ifdef FREE_TEST
-    p->malloc_flag = pParse->malloc_cnt;
-    testbuf[pParse->malloc_cnt] = 1;
-    if(pParse->malloc_cnt==9)
-    {
-        printf("newnode %d\n",pParse->malloc_cnt);
-    }
-#endif
     return p;
 }
 void FreeAstNode(AstParse *pParse,TokenInfo *p)
 {
-    if(pParse->free_cnt==1700)
-    {
-        printf("sd %d\n",pParse->free_cnt);
-    }
     assert(p!=NULL);
     if(p->type==PROP_SYMB || p->type==PROP_IMPL)
     {
         if(p->zSymb!=NULL){
-#ifdef FREE_TEST
-            if(testbuf[p->malloc_string]==0){
-                printf("refree str %d\n",p->malloc_string);
-                exit(0);
-            }
-            testbuf[p->malloc_string] = 0;
-#endif
             Free(p->zSymb);
             p->zSymb = NULL;
-            pParse->free_cnt++;
         }
     }
-#ifdef FREE_TEST
-    if(testbuf[p->malloc_flag]==0){
-        printf("refree %d\n",p->malloc_flag);
-        exit(0);
-    }
-    testbuf[p->malloc_flag] = 0;
-    if(p->malloc_flag==2282){
-        log_a("free");
-    }
-#endif
-    pParse->free_cnt++;
     Free(p);
 }
 
@@ -330,16 +303,7 @@ void NewSymbString(AstParse *pParse,TokenInfo *p)
     assert(p->nSymbLen<10);
     memcpy(temp,p->zSymb,p->nSymbLen);
     p->zSymb = Malloc(p->nSymbLen+1);
-    pParse->malloc_cnt++;
     memcpy(p->zSymb,temp,p->nSymbLen+1);
-   // printf("symb %d\n",pParse->malloc_cnt);
-#ifdef FREE_TEST
-    p->malloc_string = pParse->malloc_cnt;
-    testbuf[pParse->malloc_cnt] = 1;
-    if(pParse->malloc_cnt==2264){
-        printf("symb %d\n",pParse->malloc_cnt);
-    }
-#endif
 }
 void NewSymbStr(AstParse *pParse,TokenInfo *p)
 {
@@ -368,9 +332,7 @@ AstParse *CreatAstParse(void){
     pParse->pDb = (DbInfo*)Malloc(sizeof(DbInfo));
     pParse->pDb->db = CreatSqliteConn("test.db");
     pParse->pPointSet = CreatPointHash(128);
-    pParse->malloc_cnt += 3;
     pParse->pLineSet = CreatLineHash(128);
-    pParse->malloc_cnt += 2;
     for(i=0;i<3;i++){
         pParse->apAxiom[i] = NewNode(pParse);
         pParse->apAxiom[i]->symb = aNum[i];
@@ -419,14 +381,12 @@ Mem5Global * NewMemPool(AstParse *pParse,int len)
 {
     Mem5Global *pMem;
     pMem = memsys5Init(len,16);
-    pParse->malloc_cnt++;
     return pMem;
 }
 
 void FreeMemPool(AstParse *pParse,Mem5Global **ppMem)
 {
     memsys5Shutdown(ppMem);
-    pParse->free_cnt++;
     //log_a("pool len %d",pParse->test);
     pParse->test = 0;
 }

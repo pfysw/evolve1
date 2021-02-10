@@ -140,16 +140,6 @@ int main(int argc, char** argv)
    for(int i=0;i<3;i++){
        FreeAstNode(pParse,pParse->apAxiom[i]);
    }
-   log_a("malloc %d free %d",pParse->malloc_cnt,
-           pParse->free_cnt);
-#ifdef FREE_TEST
-   extern u8 testbuf[10000];
-   for(int i=0;i<pParse->malloc_cnt;i++){
-       if(testbuf[i]){
-           printf("not free %d\n",i);
-       }
-   }
-#endif
    CloseAstParse(pParse);
    printf("%ld\n",sizeof(TokenInfo));
 

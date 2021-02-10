@@ -11,9 +11,6 @@
 #include <assert.h>
 #include "geometry.h"
 
-#ifdef FREE_TEST
-extern u8 testbuf[];
-#endif
 
 PointHash *CreatPointHash(int nSlot)
 {
@@ -58,21 +55,13 @@ void FreeLinePoint(AstParse *pParse,LinePoint *pHead)
     while(1)
     {
         if(p->isHead){
-#ifdef FREE_TEST
-        testbuf[p->malloc_flag] = 0;
-#endif
             Free(p);
-            pParse->free_cnt++;
             break;
         }
         else{
-#ifdef FREE_TEST
-    testbuf[p->malloc_flag] = 0;
-#endif
             pTmp = p;
             p = p->pNext;
             Free(pTmp);
-            pParse->free_cnt++;
         }
     }
 }
@@ -98,17 +87,13 @@ void FreePointSet(AstParse *pParse)
         //FreeLineData(pParse,pPointSet->ppArray[i]);
         Free(pPointSet->ppArray[i]->ppLine);
         pPointSet->ppArray[i]->ppLine = NULL;
-        pParse->free_cnt++;
         Free(pPointSet->ppArray[i]->zSymb);
-        pParse->free_cnt++;
-//        Free(pPointSet->ppArray[i]);
-//        pParse->free_cnt++;
+        Free(pPointSet->ppArray[i]);
     }
     for(i=0;i<pLineSet->nLine;i++)
     {
         FreeLinePoint(pParse,pLineSet->ppLine[i]->pHead);
-//        Free(pLineSet->ppLine[i]);
-//        pParse->free_cnt++;
+        Free(pLineSet->ppLine[i]);
     }
 }
 
@@ -120,7 +105,6 @@ void CloseGeomSet(AstParse *pParse)
     Free(pParse->pPointSet);
     Free(pParse->pLineSet->ppLine);
     Free(pParse->pLineSet);
-    pParse->free_cnt += 5;
 }
 
 LinePoint *NewPointNode(PoinData *pPoint)
@@ -145,7 +129,6 @@ LinePoint *NewPointHead(PoinData *pPoint)
 void InsertPointNode(AstParse *pParse,LinePoint *pPre,PoinData *pNode)
 {
     LinePoint *p = (LinePoint*)Malloc(sizeof(LinePoint));
-    pParse->malloc_cnt++;
     memset(p,0,sizeof(LinePoint));
     p->pPoint = pNode;
 
@@ -153,10 +136,6 @@ void InsertPointNode(AstParse *pParse,LinePoint *pPre,PoinData *pNode)
     p->pPre = pPre;
     p->pNext->pPre = p;
     pPre->pNext = p;
-#ifdef FREE_TEST
-    p->malloc_flag = pParse->malloc_cnt;
-    testbuf[pParse->malloc_cnt] = 1;
-#endif
 }
 
 LinePoint *FindPointLoc(LinePoint *pHead,PoinData *pNode)
@@ -196,7 +175,6 @@ LineData *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight)
     LineData *pNew;
     LineHash *pLineSet = pParse->pLineSet;
     pNew = (LineData*)Malloc(sizeof(LineData));
-    pParse->malloc_cnt++;
     memset(pNew,0,sizeof(LineData));
     pLeft->ppLine[iRight] = pNew;
     pLeft->nArray++;
@@ -208,11 +186,6 @@ LineData *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight)
     pLineSet->ppLine[pNew->iNum] = pNew;
     pLineSet->nLine++;
     pNew->pHead = NewPointHead(pLeft);
-    pParse->malloc_cnt++;
-#ifdef FREE_TEST
-    pNew->pHead->malloc_flag = pParse->malloc_cnt;
-    testbuf[pParse->malloc_cnt] = 1;
-#endif
     return pNew;
 }
 
@@ -331,15 +304,12 @@ GeomType SetGeomHash(AstParse *pParse,TokenInfo *pAst)
             }
         }
         pPoint = (PoinData *)Malloc(sizeof(PoinData));
-        pParse->malloc_cnt++;
         memset(pPoint,0,sizeof(PoinData));
         pPoint->iNum = pSet->nPoint++;
         pSet->ppArray[pPoint->iNum] = pPoint;
         pPoint->zSymb = (char*)Malloc(pAst->nSymbLen+1);
-        pParse->malloc_cnt++;
         memcpy(pPoint->zSymb,pAst->zSymb,pAst->nSymbLen+1);
         pPoint->ppLine = (LineData**)Malloc(sizeof(LineData*)*pPoint->iNum);
-        pParse->malloc_cnt++;
         memset(pPoint->ppLine, 0, sizeof(LineData*)*pPoint->iNum);
         pSet->ppHash[key] = pPoint;
         ele = GetPointEle(pSet->ppHash[key]);
