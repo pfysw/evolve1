@@ -139,7 +139,7 @@ int main(int argc, char** argv)
    for(int i=0;i<3;i++){
        FreeAstNode(pParse,pParse->apAxiom[i]);
    }
-
+   CloseGeomSet(pParse);
    log_a("malloc %d free %d",pParse->malloc_cnt,
            pParse->free_cnt);
 #ifdef FREE_TEST

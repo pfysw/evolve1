@@ -1,4 +1,4 @@
-((exist B)->(A-C2))val 60;
+((exist B)->(A-C))val 60;
 (B-C)-(exist D);
 end;
 exist E right (B-A);

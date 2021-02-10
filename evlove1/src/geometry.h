@@ -22,6 +22,9 @@ struct LinePoint
     LinePoint *pPre;
     PoinData *pPoint;
     u8 isHead;
+#ifdef FREE_TEST
+    int malloc_flag;
+#endif
 };
 
 
@@ -37,7 +40,7 @@ struct PoinData
     int iNum;
     int nArray;
     char *zSymb;
-    LineData **ppArray;
+    LineData **ppLine;
 };
 
 typedef struct PointHash PointHash;
@@ -55,7 +58,7 @@ struct LineHash
 {
     int nLine;
     int nSlot;
-    LineData **ppArray;
+    LineData **ppLine;
 };
 
 typedef struct GeomType GeomType;
@@ -72,5 +75,6 @@ struct GeomType
 PointHash *CreatPointHash(int nSlot);
 LineHash *CreatLineHash(int nSlot);
 void ParseGeomEle(AstParse *pParse,Vector *pSet);
+void CloseGeomSet(AstParse *pParse);
 
 #endif /* GEOMETRY_H_ */

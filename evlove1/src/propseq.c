@@ -529,10 +529,6 @@ TokenInfo * PropGenSeq(
                   printf("i %d j %d\n",i,j);
                   PrintAst(pParse,ppMid[j]->pNode);
 #endif
-//                  static int jj = 0;
-//                  jj++;
-//                  if(jj==93)
-//                      printf("jj %d\n",jj);
 
                   if(isConflictProp(pParse,ppMid[i]->pNode,ppMid[j]->pNode))
                   {
