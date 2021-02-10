@@ -36,6 +36,12 @@ struct AstParse
     int test;
 };
 
+typedef struct MemInfo MemInfo;
+struct MemInfo{
+    int malloc_cnt;
+    int free_cnt;
+};
+
 void PrintAst(AstParse *pParse,TokenInfo *pAst);
 void SetSymb(AstParse *pParse,TokenInfo *pB);
 TokenInfo *NewNode(AstParse *pParse);
@@ -77,5 +83,8 @@ void WritePropStr(
         char *op);
 void WriteAxiomStr(AstParse *pParse,TokenInfo *pA);
 void SetExprFlag(AstParse *pParse,TokenInfo *pB,TokenInfo *pC);
+void* Malloc(u32 size);
+void Free(void *p);
+void CheckFreeNum();
 
 #endif /* AST_H_ */

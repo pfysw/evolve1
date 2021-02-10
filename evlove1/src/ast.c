@@ -12,7 +12,40 @@
 #include "db.h"
 #include "geometry.h"
 
+MemInfo g_mem = {0};
 u8 testbuf[10000] = {0};
+
+void *addr_buf[1000] = {0};
+void* Malloc(u32 size){
+    void *p = malloc(size);
+    if(g_mem.malloc_cnt==64){
+        printf("mal\n");
+    }
+    addr_buf[g_mem.malloc_cnt] = p;
+    g_mem.malloc_cnt++;
+    return p;
+}
+void Free(void *p){
+    for(int i=0;i<g_mem.malloc_cnt;i++){
+        if(addr_buf[i]==p){
+            addr_buf[i] = 0;
+            break;
+        }
+    }
+    free(p);
+    g_mem.free_cnt++;
+}
+
+void CheckFreeNum()
+{
+    printf("malloc %d free %d\n",g_mem.malloc_cnt,g_mem.free_cnt);
+    for(int i=0;i<g_mem.malloc_cnt;i++){
+        if(addr_buf[i]!=0){
+            printf("nofree %d\n",i);
+        }
+    }
+}
+
 void PrintAst(AstParse *pParse,TokenInfo *pAst)
 {
     static int cnt = 0;
@@ -172,7 +205,7 @@ void PrintSubstAst(AstParse *pParse,TokenInfo *pAst)
 TokenInfo *NewNode(AstParse *pParse)
 {
     TokenInfo *p;
-    p = (TokenInfo *)malloc(sizeof(TokenInfo));
+    p = (TokenInfo *)Malloc(sizeof(TokenInfo));
     pParse->malloc_cnt++;
     memset(p,0,sizeof(TokenInfo));
 #ifdef FREE_TEST
@@ -202,7 +235,7 @@ void FreeAstNode(AstParse *pParse,TokenInfo *p)
             }
             testbuf[p->malloc_string] = 0;
 #endif
-            free(p->zSymb);
+            Free(p->zSymb);
             p->zSymb = NULL;
             pParse->free_cnt++;
         }
@@ -218,7 +251,7 @@ void FreeAstNode(AstParse *pParse,TokenInfo *p)
     }
 #endif
     pParse->free_cnt++;
-    free(p);
+    Free(p);
 }
 
 TokenInfo *NewTempNode(AstParse *pParse)
@@ -296,7 +329,7 @@ void NewSymbString(AstParse *pParse,TokenInfo *p)
     char temp[100] = {0};
     assert(p->nSymbLen<10);
     memcpy(temp,p->zSymb,p->nSymbLen);
-    p->zSymb = malloc(p->nSymbLen+1);
+    p->zSymb = Malloc(p->nSymbLen+1);
     pParse->malloc_cnt++;
     memcpy(p->zSymb,temp,p->nSymbLen+1);
    // printf("symb %d\n",pParse->malloc_cnt);
@@ -330,9 +363,9 @@ AstParse *CreatAstParse(void){
     char aNum[] = "123";
     int i = 0;
 
-    pParse = (AstParse *)malloc(sizeof(AstParse));
+    pParse = (AstParse *)Malloc(sizeof(AstParse));
     memset(pParse,0,sizeof(AstParse));
-    pParse->pDb = (DbInfo*)malloc(sizeof(DbInfo));
+    pParse->pDb = (DbInfo*)Malloc(sizeof(DbInfo));
     pParse->pDb->db = CreatSqliteConn("test.db");
     pParse->pPointSet = CreatPointHash(128);
     pParse->malloc_cnt += 3;
@@ -346,7 +379,7 @@ AstParse *CreatAstParse(void){
         pParse->apAxiom[i]->nSymbLen = 1;
         NewSymbString(pParse,pParse->apAxiom[i]);
     }
-    pParse->ppTemp = (TokenInfo **)malloc(100*sizeof(TokenInfo *));
+    pParse->ppTemp = (TokenInfo **)Malloc(100*sizeof(TokenInfo *));
 
     return pParse;
 }
@@ -355,9 +388,9 @@ void CloseAstParse(AstParse *pParse)
 {
     sqlite3_close(pParse->pDb->db);
     //todo close pPointSet
-    free(pParse->pDb);
-    free(pParse->ppTemp);
-    free(pParse);
+    Free(pParse->pDb);
+    Free(pParse->ppTemp);
+    Free(pParse);
 }
 
 void WritePropStr(

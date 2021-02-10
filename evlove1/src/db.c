@@ -374,7 +374,7 @@ void SqliteReadTable(AstParse *pParse,sqlite3 *db,char *table,Vector *pV)
     }
     printf("row %d\n",nRow);
     nFile = nRow*PROP_STR_LEN;
-    pMemFile = (char *)malloc(nFile);
+    pMemFile = (char *)Malloc(nFile);
     memset(pMemFile,0,nFile);
     for(i=1;i<nRow+1;i++){
         printf("%s = %s\n",dbResult[i*2],dbResult[i*2+1]);
@@ -384,5 +384,5 @@ void SqliteReadTable(AstParse *pParse,sqlite3 *db,char *table,Vector *pV)
     }
     GetPropStrParse(pParse,pMemFile,pV,nFile);
     sqlite3_free_table(dbResult);
-    free(pMemFile);
+    Free(pMemFile);
 }

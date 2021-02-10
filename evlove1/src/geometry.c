@@ -19,14 +19,14 @@ PointHash *CreatPointHash(int nSlot)
 {
     PointHash *pPointSet;
     int size;
-    pPointSet = (PointHash *)malloc(sizeof(PointHash));
+    pPointSet = (PointHash *)Malloc(sizeof(PointHash));
     memset(pPointSet,0,sizeof(PointHash));
     pPointSet->nHash = nSlot*2;
     size = sizeof(PointHash *)*nSlot;
-    pPointSet->ppArray = (PoinData **)malloc(size);
+    pPointSet->ppArray = (PoinData **)Malloc(size);
     memset(pPointSet->ppArray,0,size);
     size = sizeof(PointHash *)*pPointSet->nHash;
-    pPointSet->ppHash = (PoinData **)malloc(size);
+    pPointSet->ppHash = (PoinData **)Malloc(size);
     memset(pPointSet->ppHash,0,size);
     return pPointSet;
 }
@@ -35,11 +35,11 @@ LineHash *CreatLineHash(int nSlot)
 {
     LineHash *pLineSet;
     int size;
-    pLineSet = (LineHash *)malloc(sizeof(LineHash));
+    pLineSet = (LineHash *)Malloc(sizeof(LineHash));
     memset(pLineSet,0,sizeof(LineHash));
     size = sizeof(LineHash *)*nSlot;
     pLineSet->nSlot = nSlot;
-    pLineSet->ppLine = (LineData **)malloc(size);
+    pLineSet->ppLine = (LineData **)Malloc(size);
     memset(pLineSet->ppLine,0,size);
     return pLineSet;
 }
@@ -61,7 +61,7 @@ void FreeLinePoint(AstParse *pParse,LinePoint *pHead)
 #ifdef FREE_TEST
         testbuf[p->malloc_flag] = 0;
 #endif
-            free(p);
+            Free(p);
             pParse->free_cnt++;
             break;
         }
@@ -71,7 +71,7 @@ void FreeLinePoint(AstParse *pParse,LinePoint *pHead)
 #endif
             pTmp = p;
             p = p->pNext;
-            free(pTmp);
+            Free(pTmp);
             pParse->free_cnt++;
         }
     }
@@ -96,37 +96,37 @@ void FreePointSet(AstParse *pParse)
     for(i=0;i<pPointSet->nPoint;i++)
     {
         //FreeLineData(pParse,pPointSet->ppArray[i]);
-        free(pPointSet->ppArray[i]->ppLine);
+        Free(pPointSet->ppArray[i]->ppLine);
         pPointSet->ppArray[i]->ppLine = NULL;
         pParse->free_cnt++;
-        free(pPointSet->ppArray[i]->zSymb);
+        Free(pPointSet->ppArray[i]->zSymb);
         pParse->free_cnt++;
-        free(pPointSet->ppArray[i]);
-        pParse->free_cnt++;
+//        Free(pPointSet->ppArray[i]);
+//        pParse->free_cnt++;
     }
     for(i=0;i<pLineSet->nLine;i++)
     {
         FreeLinePoint(pParse,pLineSet->ppLine[i]->pHead);
-        free(pLineSet->ppLine[i]);
-        pParse->free_cnt++;
+//        Free(pLineSet->ppLine[i]);
+//        pParse->free_cnt++;
     }
 }
 
 void CloseGeomSet(AstParse *pParse)
 {
     FreePointSet(pParse);
-    free(pParse->pPointSet->ppArray);
-    free(pParse->pPointSet->ppHash);
-    free(pParse->pPointSet);
-    free(pParse->pLineSet->ppLine);
-    free(pParse->pLineSet);
+    Free(pParse->pPointSet->ppArray);
+    Free(pParse->pPointSet->ppHash);
+    Free(pParse->pPointSet);
+    Free(pParse->pLineSet->ppLine);
+    Free(pParse->pLineSet);
     pParse->free_cnt += 5;
 }
 
 LinePoint *NewPointNode(PoinData *pPoint)
 {
     LinePoint *p;
-    p = (LinePoint *)malloc(sizeof(LinePoint));
+    p = (LinePoint *)Malloc(sizeof(LinePoint));
     memset(p,0,sizeof(*p));
     p->pPoint = pPoint;
     return p;
@@ -144,7 +144,7 @@ LinePoint *NewPointHead(PoinData *pPoint)
 
 void InsertPointNode(AstParse *pParse,LinePoint *pPre,PoinData *pNode)
 {
-    LinePoint *p = (LinePoint*)malloc(sizeof(LinePoint));
+    LinePoint *p = (LinePoint*)Malloc(sizeof(LinePoint));
     pParse->malloc_cnt++;
     memset(p,0,sizeof(LinePoint));
     p->pPoint = pNode;
@@ -195,7 +195,7 @@ LineData *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight)
 {
     LineData *pNew;
     LineHash *pLineSet = pParse->pLineSet;
-    pNew = (LineData*)malloc(sizeof(LineData));
+    pNew = (LineData*)Malloc(sizeof(LineData));
     pParse->malloc_cnt++;
     memset(pNew,0,sizeof(LineData));
     pLeft->ppLine[iRight] = pNew;
@@ -330,15 +330,15 @@ GeomType SetGeomHash(AstParse *pParse,TokenInfo *pAst)
                 return ele;//hash have the element
             }
         }
-        pPoint = (PoinData *)malloc(sizeof(PoinData));
+        pPoint = (PoinData *)Malloc(sizeof(PoinData));
         pParse->malloc_cnt++;
         memset(pPoint,0,sizeof(PoinData));
         pPoint->iNum = pSet->nPoint++;
         pSet->ppArray[pPoint->iNum] = pPoint;
-        pPoint->zSymb = (char*)malloc(pAst->nSymbLen+1);
+        pPoint->zSymb = (char*)Malloc(pAst->nSymbLen+1);
         pParse->malloc_cnt++;
         memcpy(pPoint->zSymb,pAst->zSymb,pAst->nSymbLen+1);
-        pPoint->ppLine = (LineData**)malloc(sizeof(LineData*)*pPoint->iNum);
+        pPoint->ppLine = (LineData**)Malloc(sizeof(LineData*)*pPoint->iNum);
         pParse->malloc_cnt++;
         memset(pPoint->ppLine, 0, sizeof(LineData*)*pPoint->iNum);
         pSet->ppHash[key] = pPoint;

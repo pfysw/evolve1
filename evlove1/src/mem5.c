@@ -53,7 +53,7 @@
 #include <string.h>
 #include <assert.h>
 #include <unistd.h>
-#include "token.h"
+#include "ast.h"
 #include "mem5.h"
 
 
@@ -270,7 +270,7 @@ Mem5Global *memsys5Init(int nHeap, int mnReq){
   */
   assert( (sizeof(Mem5Link)&(sizeof(Mem5Link)-1))==0 );
   Mem5Global *pMem = NULL;
-  pMem = (Mem5Global*)malloc(sizeof(Mem5Global)+nHeap);
+  pMem = (Mem5Global*)Malloc(sizeof(Mem5Global)+nHeap);
   memset(pMem,0,sizeof(Mem5Global));
 
   nByte = nHeap;
@@ -311,6 +311,6 @@ Mem5Global *memsys5Init(int nHeap, int mnReq){
 ** Deinitialize this module.
 */
 void memsys5Shutdown(Mem5Global **pMem){
-  free(*pMem);
+  Free(*pMem);
   *pMem = NULL;
 }

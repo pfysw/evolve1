@@ -132,14 +132,14 @@ int main(int argc, char** argv)
 
    //GenBasicProp(pParse);
   // SubstSingleTest(pParse,theoremset.data);
-  // SubstMpTest(pParse,pSet);
+   //SubstMpTest(pParse,pSet);
 
    ParseGeomEle(pParse,pSet);
+   CloseGeomSet(pParse);
    FreeVector(pParse,pSet);
    for(int i=0;i<3;i++){
        FreeAstNode(pParse,pParse->apAxiom[i]);
    }
-   CloseGeomSet(pParse);
    log_a("malloc %d free %d",pParse->malloc_cnt,
            pParse->free_cnt);
 #ifdef FREE_TEST
@@ -152,6 +152,8 @@ int main(int argc, char** argv)
 #endif
    CloseAstParse(pParse);
    printf("%ld\n",sizeof(TokenInfo));
+
+   CheckFreeNum();
    //db_test();
    //mmap_demo();
    return 0;

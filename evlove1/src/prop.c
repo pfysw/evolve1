@@ -488,9 +488,9 @@ void FreeVector(AstParse *pParse,Vector *pV)
         FreeAstTree(pParse,&pV->data[i],pParse->ppTemp);
     }
     pV->n = 0;
-    free(pV->data);
+    Free(pV->data);
     pParse->free_cnt++;
-    free(pV);
+    Free(pV);
     pParse->free_cnt++;
 }
 
@@ -552,11 +552,11 @@ u8 aCnt[1000] = {0};
 
 Vector *InitTheoremSet(AstParse *pParse)
 {
-    Vector *pSet = (Vector *)malloc(sizeof(Vector));
+    Vector *pSet = (Vector *)Malloc(sizeof(Vector));
     pParse->malloc_cnt++;
     memset(pSet,0,sizeof(Vector));
     pSet->size = 100;
-    pSet->data = malloc(pSet->size*sizeof(TokenInfo **));
+    pSet->data = Malloc(pSet->size*sizeof(TokenInfo **));
     pParse->malloc_cnt++;
     return pSet;
 }
