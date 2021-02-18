@@ -24,6 +24,15 @@ struct LinePoint
     u8 isHead;
 };
 
+typedef struct LinkNode LinkNode;
+struct LinkNode
+{
+    LinkNode *pNext;
+    LinkNode *pPre;
+    void *pVal;
+    u8 isHead;
+};
+
 
 typedef struct LineData LineData;
 struct LineData
@@ -32,12 +41,22 @@ struct LineData
     LinePoint *pHead;
 };
 
+typedef struct LineSeg LineSeg;
+struct LineSeg
+{
+    LineSeg *pNext;
+    LineSeg *pPre;
+    LineData *pLine;
+    u8 isHead;
+};
+
+
 struct PoinData
 {
     int iNum;
     int nArray;
     char *zSymb;
-    LineData **ppLine;
+    LineSeg **ppSeg;
 };
 
 typedef struct PointHash PointHash;

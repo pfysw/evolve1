@@ -20,7 +20,7 @@ void *addr_buf[1000] = {0};
 void* Malloc(u32 size){
     void *p = malloc(size);
 #ifdef FREE_TEST
-    if(g_mem.malloc_cnt==64){
+    if(g_mem.malloc_cnt==86){
         printf("mal\n");
     }
     addr_buf[g_mem.malloc_cnt] = p;
@@ -44,11 +44,13 @@ void Free(void *p){
 void CheckFreeNum()
 {
     printf("malloc %d free %d\n",g_mem.malloc_cnt,g_mem.free_cnt);
+#ifdef FREE_TEST
     for(int i=0;i<g_mem.malloc_cnt;i++){
         if(addr_buf[i]!=0){
             printf("nofree %d\n",i);
         }
     }
+#endif
 }
 
 void PrintAst(AstParse *pParse,TokenInfo *pAst)
