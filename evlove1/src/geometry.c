@@ -56,7 +56,7 @@ void FreeLinePoint(AstParse *pParse,LinePoint *pHead)
     while(1)
     {
         if(p->isHead){
-            log_c("%s ",p->pPoint->zSymb);
+            //log_c("%s ",p->pPoint->zSymb);
             Free(p);
             break;
         }
@@ -212,7 +212,7 @@ LineData *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight)
     }
     pLineSet->ppLine[pNew->iNum] = pNew;
     pLineSet->nLine++;
-    pNew->pHead = NewPointHead(pLeft);
+    pNew->pHead = NewPointHead(NULL);
     return pNew;
 }
 
@@ -242,7 +242,9 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight,u8 op)
             if(iLeft>iRight){
                 if(pLeft->pPoint1->ppSeg[iRight]==NULL){
                     pLine = NewLineObj(pParse,pLeft->pPoint1,iRight);
-                    InsertPointNode(pParse,pLine->pHead,pRight->pPoint1);
+                    //保持最初始的输入顺序，直线B-C,pLeft是B，pRight是C
+                    InsertPointNode(pParse,pLine->pHead,pLeft->pPoint1);
+                    InsertPointNode(pParse,pLine->pHead->pNext,pRight->pPoint1);
                 }
                 else{
                     pLine = pLeft->pPoint1->ppSeg[iRight]->pLine;
@@ -251,7 +253,9 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight,u8 op)
             else{
                 if(pRight->pPoint1->ppSeg[iLeft]==NULL){
                     pLine = NewLineObj(pParse,pRight->pPoint1,iLeft);
+                    //保持最初始的输入顺序，直线B-C,pLeft是B，pRight是C
                     InsertPointNode(pParse,pLine->pHead,pLeft->pPoint1);
+                    InsertPointNode(pParse,pLine->pHead->pNext,pRight->pPoint1);
                 }
                 else{
                     pLine = pRight->pPoint1->ppSeg[iLeft]->pLine;
