@@ -1,6 +1,7 @@
 ((exist B)->(A-C))val 60;
 (B-C)-(exist D);
-(B-A)-(exist E);
+//(B-A)-(exist E);
+(B-exist E)-A;
 end;
 exist E right (B-A);
 (E-A) = (B-D);

@@ -178,21 +178,66 @@ LinePoint *FindPointLoc(LinePoint *pHead,PoinData *pNode)
     return NULL;
 }
 
+void TravLinePoint(LineData *pLine)
+{
+    LinePoint *p;
+    assert(pLine->pHead->isHead);
+    p = pLine->pHead->pNext;
+    while(!p->isHead){
+        printf("point %s\n",p->pPoint->zSymb);
+        p = p->pNext;
+    }
+}
 
 
 void SetLineArray(PoinData *pLeft,LineData *pLine,PoinData *pRight)
 {
     int iLeft;
     int iRight;
+    assert(0);//待删除
     iLeft = pLeft->iNum;
     iRight = pRight->iNum;
     if(iLeft>iRight){
+       // assert(pLeft->ppSeg[iRight]==NULL);
         pLeft->ppSeg[iRight] = (LineSeg*)NewLinkHead(pLine);
     }
     else
     {
+        assert(pLeft->ppSeg[iLeft]==NULL);
         pRight->ppSeg[iLeft] = (LineSeg*)NewLinkHead(pLine);
     }
+}
+
+LineSeg** GetLineSeg(PoinData *pLeft,PoinData *pRight)
+{
+    int iLeft;
+    int iRight;
+    iLeft = pLeft->iNum;
+    iRight = pRight->iNum;
+    if(iLeft>iRight){
+        return &pLeft->ppSeg[iRight];
+    }
+    else
+    {
+        return &pRight->ppSeg[iLeft];
+    }
+}
+
+void ResetLine(AstParse *pParse,GeomType *pDst,LineData *pLine)
+{
+    LineSeg** ppSeg;
+    int nLine;
+    LineHash *pLineSet = pParse->pLineSet;
+
+    ppSeg = GetLineSeg(pDst->pPoint1,pDst->pPoint2);
+
+    log_c("reset: ");
+    nLine = --pParse->pLineSet->nLine;
+    //todo 确认pDst->pLine1是否是最后一个
+    assert(pLineSet->ppLine[nLine]==pDst->pLine1);
+    FreeLinePoint(pParse,pDst->pLine1->pHead);
+    Free(pDst->pLine1);
+    (*ppSeg)->pLine = pLine;
 }
 
 LineData *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight)
@@ -233,6 +278,8 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight,u8 op)
     int iRight;
     LineData *pLine;
     LinePoint *pLoc;
+    LineSeg** ppLs1;
+    LineSeg** ppLs2;
     if(op==OP_LINE){
         if(pLeft->type==ELE_POINT && pRight->type==ELE_POINT)
         {
@@ -278,12 +325,24 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight,u8 op)
         }
         else if(pLeft->type==ELE_LINE)
         {
-            assert(pRight->type==ELE_POINT);
-            SetLineArray(pRight->pPoint1,pLeft->pLine1,pLeft->pPoint1);
-            SetLineArray(pRight->pPoint1,pLeft->pLine1,pLeft->pPoint2);
-            pLoc = FindPointLoc(pLeft->pLine1->pHead,pLeft->pPoint2);
-            //pRight->pPoint1插入到pLeft->pLine1后面
-            InsertPointNode(pParse,pLoc,pRight->pPoint1);
+            ppLs1 = GetLineSeg(pRight->pPoint1,pLeft->pPoint1);
+            ppLs2 = GetLineSeg(pRight->pPoint1,pLeft->pPoint2);
+            if(*ppLs1!=NULL){
+                assert(*ppLs2==NULL);
+                pLoc = FindPointLoc((*ppLs1)->pLine->pHead,pLeft->pPoint1);
+                ResetLine(pParse,pLeft,(*ppLs1)->pLine);
+                InsertPointNode(pParse,pLoc,pLeft->pPoint2);
+            }
+            else if(*ppLs2!=NULL){
+                assert(0);
+            }
+            else{
+                *ppLs1 = (LineSeg*)NewLinkHead(pLeft->pLine1);
+                *ppLs2 = (LineSeg*)NewLinkHead(pLeft->pLine1);
+                pLoc = FindPointLoc(pLeft->pLine1->pHead,pLeft->pPoint2);
+                //pRight->pPoint1插入到pLeft->pLine1后面
+                InsertPointNode(pParse,pLoc,pRight->pPoint1);
+            }
         }
         else
         {
@@ -337,8 +396,8 @@ GeomType SetGeomHash(AstParse *pParse,TokenInfo *pAst)
         pSet->ppArray[pPoint->iNum] = pPoint;
         pPoint->zSymb = (char*)Malloc(pAst->nSymbLen+1);
         memcpy(pPoint->zSymb,pAst->zSymb,pAst->nSymbLen+1);
-        pPoint->ppSeg = (LineData**)Malloc(sizeof(LineData*)*pPoint->iNum);
-        memset(pPoint->ppSeg, 0, sizeof(LineData*)*pPoint->iNum);
+        pPoint->ppSeg = (LineSeg**)Malloc(sizeof(LineSeg*)*pPoint->iNum);
+        memset(pPoint->ppSeg, 0, sizeof(LineSeg*)*pPoint->iNum);
         pSet->ppHash[key] = pPoint;
         ele = GetPointEle(pSet->ppHash[key]);
         log_a("sym %s key %d num %d",pPoint->zSymb,key,pPoint->iNum);
