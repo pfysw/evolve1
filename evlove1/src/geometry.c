@@ -280,87 +280,94 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight,u8 op)
     LinePoint *pLoc;
     LineSeg** ppLs1;
     LineSeg** ppLs2;
-    if(op==OP_LINE){
-        if(pLeft->type==ELE_POINT && pRight->type==ELE_POINT)
-        {
-            ele.type = ELE_LINE;
-            iLeft = pLeft->pPoint1->iNum;
-            iRight = pRight->pPoint1->iNum;
-            if(iLeft>iRight){
-                if(pLeft->pPoint1->ppSeg[iRight]==NULL){
-                    pLine = NewLineObj(pParse,pLeft->pPoint1,iRight);
-                    //保持最初始的输入顺序，直线B-C,pLeft是B，pRight是C
-                    InsertPointNode(pParse,pLine->pHead,pLeft->pPoint1);
-                    InsertPointNode(pParse,pLine->pHead->pNext,pRight->pPoint1);
-                }
-                else{
-                    pLine = pLeft->pPoint1->ppSeg[iRight]->pLine;
-                }
+
+    if(pLeft->type==ELE_POINT && pRight->type==ELE_POINT)
+    {
+        ele.type = ELE_LINE;
+        iLeft = pLeft->pPoint1->iNum;
+        iRight = pRight->pPoint1->iNum;
+        if(iLeft>iRight){
+            if(pLeft->pPoint1->ppSeg[iRight]==NULL){
+                pLine = NewLineObj(pParse,pLeft->pPoint1,iRight);
+                //保持最初始的输入顺序，直线B-C,pLeft是B，pRight是C
+                InsertPointNode(pParse,pLine->pHead,pLeft->pPoint1);
+                InsertPointNode(pParse,pLine->pHead->pNext,pRight->pPoint1);
             }
             else{
-                if(pRight->pPoint1->ppSeg[iLeft]==NULL){
-                    pLine = NewLineObj(pParse,pRight->pPoint1,iLeft);
-                    //保持最初始的输入顺序，直线B-C,pLeft是B，pRight是C
-                    InsertPointNode(pParse,pLine->pHead,pLeft->pPoint1);
-                    InsertPointNode(pParse,pLine->pHead->pNext,pRight->pPoint1);
-                }
-                else{
-                    pLine = pRight->pPoint1->ppSeg[iLeft]->pLine;
-                }
+                pLine = pLeft->pPoint1->ppSeg[iRight]->pLine;
             }
-            //保持最初始的输入顺序，直线B-C,ele.pPoint1是B，ele.pPoint2是C
-            ele.pPoint1 = pLeft->pPoint1;
-            ele.pPoint2 = pRight->pPoint1;
-            ele.pLine1 = pLine;
         }
-        else if(pLeft->type==ELE_POINT)
-        {
-            assert(pRight->type==ELE_LINE);
-            //pRight->pPoint2一定在pRight->pPoint1的后面吗
-            SetLineArray(pLeft->pPoint1,pRight->pLine1,pRight->pPoint1);
-            SetLineArray(pLeft->pPoint1,pRight->pLine1,pRight->pPoint2);
-            pLoc = FindPointLoc(pRight->pLine1->pHead,pRight->pPoint1);
-            //点pLeft->pPoint1插入到线段pRight的前面
-            InsertPointNode(pParse,pLoc->pPre,pLeft->pPoint1);
-        }
-        else if(pLeft->type==ELE_LINE)
-        {
-            ppLs1 = GetLineSeg(pRight->pPoint1,pLeft->pPoint1);
-            ppLs2 = GetLineSeg(pRight->pPoint1,pLeft->pPoint2);
-            if(*ppLs1!=NULL){
-                assert(*ppLs2==NULL);
-                pLoc = FindPointLoc((*ppLs1)->pLine->pHead,pLeft->pPoint1);
-                ResetLine(pParse,pLeft,(*ppLs1)->pLine);
-                InsertPointNode(pParse,pLoc,pLeft->pPoint2);
-            }
-            else if(*ppLs2!=NULL){
-                assert(0);
+        else{
+            if(pRight->pPoint1->ppSeg[iLeft]==NULL){
+                pLine = NewLineObj(pParse,pRight->pPoint1,iLeft);
+                //保持最初始的输入顺序，直线B-C,pLeft是B，pRight是C
+                InsertPointNode(pParse,pLine->pHead,pLeft->pPoint1);
+                InsertPointNode(pParse,pLine->pHead->pNext,pRight->pPoint1);
             }
             else{
-                *ppLs1 = (LineSeg*)NewLinkHead(pLeft->pLine1);
-                *ppLs2 = (LineSeg*)NewLinkHead(pLeft->pLine1);
-                pLoc = FindPointLoc(pLeft->pLine1->pHead,pLeft->pPoint2);
-                //pRight->pPoint1插入到pLeft->pLine1后面
-                InsertPointNode(pParse,pLoc,pRight->pPoint1);
+                pLine = pRight->pPoint1->ppSeg[iLeft]->pLine;
             }
         }
-        else
-        {
+        //保持最初始的输入顺序，直线B-C,ele.pPoint1是B，ele.pPoint2是C
+        ele.pPoint1 = pLeft->pPoint1;
+        ele.pPoint2 = pRight->pPoint1;
+        ele.pLine1 = pLine;
+    }
+    else if(pLeft->type==ELE_POINT)
+    {
+        assert(pRight->type==ELE_LINE);
+        //pRight->pPoint2一定在pRight->pPoint1的后面吗
+        SetLineArray(pLeft->pPoint1,pRight->pLine1,pRight->pPoint1);
+        SetLineArray(pLeft->pPoint1,pRight->pLine1,pRight->pPoint2);
+        pLoc = FindPointLoc(pRight->pLine1->pHead,pRight->pPoint1);
+        //点pLeft->pPoint1插入到线段pRight的前面
+        InsertPointNode(pParse,pLoc->pPre,pLeft->pPoint1);
+    }
+    else if(pLeft->type==ELE_LINE)
+    {
+        ppLs1 = GetLineSeg(pRight->pPoint1,pLeft->pPoint1);
+        ppLs2 = GetLineSeg(pRight->pPoint1,pLeft->pPoint2);
+        if(*ppLs1!=NULL){
+            assert(*ppLs2==NULL);
+            pLoc = FindPointLoc((*ppLs1)->pLine->pHead,pLeft->pPoint1);
+            ResetLine(pParse,pLeft,(*ppLs1)->pLine);
+            InsertPointNode(pParse,pLoc,pLeft->pPoint2);
+        }
+        else if(*ppLs2!=NULL){
             assert(0);
         }
+        else{
+            *ppLs1 = (LineSeg*)NewLinkHead(pLeft->pLine1);
+            *ppLs2 = (LineSeg*)NewLinkHead(pLeft->pLine1);
+            pLoc = FindPointLoc(pLeft->pLine1->pHead,pLeft->pPoint2);
+            //pRight->pPoint1插入到pLeft->pLine1后面
+            InsertPointNode(pParse,pLoc,pRight->pPoint1);
+        }
     }
-    else if(op==OP_IMPL)
+    else
     {
-        assert(pLeft->type==ELE_POINT && pRight->type==ELE_LINE);
-        ele1 = GetPointEle(pRight->pPoint1);
-        ele2 = GetPointEle(pRight->pPoint2);
-        ele1 = SetLineHash(pParse,pLeft,&ele1,OP_LINE);
-        ele2 = SetLineHash(pParse,pLeft,&ele2,OP_LINE);
-        ele.type = ELE_ANGLE;
-        ele.pPoint1 = pLeft->pPoint1;
-        ele.pLine1 = ele1.pLine1;
-        ele.pLine2 = ele2.pLine1;
+        assert(0);
     }
+
+    return ele;
+}
+
+GeomType SetAngleHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight,u8 op)
+{
+    GeomType ele = {0};
+    GeomType ele1 = {0};
+    GeomType ele2 = {0};
+
+    assert(pLeft->type==ELE_POINT && pRight->type==ELE_LINE);
+    ele1 = GetPointEle(pRight->pPoint1);
+    ele2 = GetPointEle(pRight->pPoint2);
+    ele1 = SetLineHash(pParse,pLeft,&ele1,OP_LINE);
+    ele2 = SetLineHash(pParse,pLeft,&ele2,OP_LINE);
+    ele.type = ELE_ANGLE;
+    ele.pPoint1 = pLeft->pPoint1;
+    ele.pLine1 = ele1.pLine1;
+    ele.pLine2 = ele2.pLine1;
+
     return ele;
 }
 
@@ -407,7 +414,19 @@ GeomType SetGeomHash(AstParse *pParse,TokenInfo *pAst)
         ele1 = SetGeomHash(pParse,pAst->pLeft);
         if(memcmp(pAst->zSymb,"val",3)!=0){
             ele2 = SetGeomHash(pParse,pAst->pRight);
-            ele = SetLineHash(pParse,&ele1,&ele2,pAst->op);
+            switch(pAst->op){
+            case OP_LINE:
+                ele = SetLineHash(pParse,&ele1,&ele2,pAst->op);
+                break;
+            case OP_IMPL:
+                ele = SetAngleHash(pParse,&ele1,&ele2,pAst->op);
+                break;
+            case OP_EQUAL:
+                break;
+            default:
+                break;
+            }
+
         }
         else{
             assert(ele1.type==ELE_ANGLE);

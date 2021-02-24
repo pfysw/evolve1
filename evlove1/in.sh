@@ -1,10 +1,10 @@
 ((exist B)->(A-C))val 60;
 (B-C)-(exist D);
-//(B-A)-(exist E);
-(B-exist E)-A;
+(B-A)-(exist E);
+//(B-exist E)-A;
+(A-E) = (B-D);
 end;
 exist E right (B-A);
-(E-A) = (B-D);
 condition;
 (((A-B)-C && (D-E)-F) && (A-B)=(D-E) && (B-C)=(D-F))->(A-C)=(C-F)
 theorem;

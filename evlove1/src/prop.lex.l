@@ -15,6 +15,7 @@ val  { return TK_IMPL; }
 [a-zA-Z0-9]+    { return TK_SYM; } 
 ~    { return TK_NEG; }
 ->    { return TK_IMPL; }
+=    { return TK_IMPL; }
 -    { return TK_IMPL; }
 >>    { return TK_IMPL; }
 \+    { return TK_IMPL; }

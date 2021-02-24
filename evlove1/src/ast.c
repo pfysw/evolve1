@@ -439,6 +439,9 @@ void SetImplExpr(
         else if(!strcmp(pD->zSymb,"-")){
             pA->op = OP_LINE;
         }
+        else if(!strcmp(pD->zSymb,"=")){
+            pA->op = OP_EQUAL;
+        }
         else if(!strcmp(pD->zSymb,"val")){
             pB->val = atoi(pC->zSymb);
             pA->val = pB->val;
