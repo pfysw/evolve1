@@ -335,6 +335,8 @@ AstParse *CreatAstParse(void){
     pParse->pDb->db = CreatSqliteConn("test.db");
     pParse->pPointSet = CreatPointHash(128);
     pParse->pLineSet = CreatLineHash(128);
+    pParse->pPlaneSet = CreatPlaneHash(128);
+
     for(i=0;i<3;i++){
         pParse->apAxiom[i] = NewNode(pParse);
         pParse->apAxiom[i]->symb = aNum[i];

@@ -14,6 +14,7 @@
 typedef struct DbInfo DbInfo;
 typedef struct PointHash PointHash;
 typedef struct LineHash LineHash;
+typedef struct PlaneHash PlaneHash;
 
 typedef struct AstParse AstParse;
 struct AstParse
@@ -25,6 +26,7 @@ struct AstParse
     DbInfo *pDb;
     PointHash *pPointSet;
     LineHash *pLineSet;
+    PlaneHash *pPlaneSet;
     u8 bDiscard;
     u8 usePool;
     int n;
