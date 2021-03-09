@@ -3,6 +3,8 @@
 (B-A)-(exist E);
 //(B-exist E)-A;
 (A-E) = (B-D);
+(B-D)-F;
+(B-F) = (B-E);
 end;
 exist E right (B-A);
 condition;

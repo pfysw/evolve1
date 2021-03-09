@@ -229,7 +229,7 @@ LinkNode *NewLinkNode(void *pVal,int size)
 {
     LinkNode *p;
     p = (LinkNode *)Malloc(size);
-    memset(p,0,sizeof(*p));
+    memset(p,0,size);
     p->pVal = pVal;
     return p;
 }
@@ -323,6 +323,7 @@ void ResetLine(AstParse *pParse,GeomType *pDst,LineData *pLine)
     //todo 确认pDst->pLine1是否是最后一个
     assert(pLineSet->ppLine[nLine]==pDst->pLine1);
     FreeLinePoint(pParse,pDst->pLine1->pHead);
+    Free(pDst->pLine1->ppSeg);
     Free(pDst->pLine1);
     (*ppSeg)->pLine = pLine;
 }
@@ -382,11 +383,24 @@ GeomType GetPointEle(PoinData *p)
 
 void SetSegPoint(LineSeg *pSeg,PoinData *pLeft,PoinData *pRight)
 {
-   // LineData *pLine = pSeg->pLine;
-   // InsertPointNode(pParse,pLine->pHead,pLeft->pPoint1);
-   // InsertPointNode(pParse,pLine->pHead->pNext,pRight->pPoint1);
-    pSeg->pLeft = pLeft;
-    pSeg->pRight = pRight;
+    LineData *pLine = pSeg->pLine;
+    LinePoint *p;
+    p = pLine->pHead->pNext;
+    while(!p->isHead){
+        if(p->pPoint==pLeft){
+            pSeg->pLeft = pLeft;
+            pSeg->pRight = pRight;
+            break;
+        }
+        else if(p->pPoint==pRight){
+            pSeg->pLeft = pRight;
+            pSeg->pRight = pLeft;
+            break;
+        }
+        else{
+            p = p->pNext;
+        }
+    }
 }
 
 
@@ -446,12 +460,12 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
         assert(*ppLs1==NULL);
         assert(*ppLs2==NULL);
         *ppLs1 = (LineSeg*)NewLinkHead(pRight->pLine1,sizeof(LineSeg));
-        SetSegPoint(*ppLs1,pLeft->pPoint1,pRight->pPoint1);
         *ppLs2 = (LineSeg*)NewLinkHead(pRight->pLine1,sizeof(LineSeg));
-        SetSegPoint(*ppLs2,pLeft->pPoint1,pRight->pPoint2);
         pLoc = FindPointLoc(pRight->pLine1->pHead,pRight->pPoint1);
         //点pLeft->pPoint1插入到线段pRight的前面
         InsertPointNode(pParse,pLoc->pPre,pLeft->pPoint1);
+        SetSegPoint(*ppLs1,pLeft->pPoint1,pRight->pPoint1);
+        SetSegPoint(*ppLs2,pLeft->pPoint1,pRight->pPoint2);
     }
     else if(pLeft->type==ELE_LINE)
     {
@@ -461,6 +475,7 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
             assert(*ppLs2==NULL);
             pLoc = FindPointLoc((*ppLs1)->pLine->pHead,pLeft->pPoint1);
             ResetLine(pParse,pLeft,(*ppLs1)->pLine);
+            *ppLs2 = (LineSeg*)NewLinkHead((*ppLs1)->pLine,sizeof(LineSeg));
             InsertPointNode(pParse,pLoc,pLeft->pPoint2);
         }
         else if(*ppLs2!=NULL){
@@ -503,23 +518,104 @@ GeomType SetAngleHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
     return ele;
 }
 
-void SetSameSeg(AstParse *pParse,PlaneSeg *pPSeg,GeomType *pLeft,GeomType *pRight)
+//0:没找到相同点 1：同向  2：异向
+int GetSegDirect(AstParse *pParse,LineSeg *pIn1,LineSeg *pIn2,GeomType *pOut)
+{
+    int rc = 0;
+    if(pIn1->pLeft==pIn2->pLeft ){
+        rc = SAME_DIRECT;
+        pOut->pPoint1 = pIn1->pRight;
+        pOut->pPoint2 = pIn2->pRight;
+    }
+    else if(pIn1->pRight==pIn2->pRight){
+        rc = SAME_DIRECT;
+        pOut->pPoint1 = pIn1->pLeft;
+        pOut->pPoint2 = pIn2->pLeft;
+    }
+    else if(pIn1->pLeft==pIn2->pRight){
+        rc = OPPS_DIRECT;
+        pOut->pPoint1 = pIn1->pRight;
+        pOut->pPoint2 = pIn2->pLeft;
+    }
+    else if(pIn1->pRight==pIn2->pLeft){
+        rc = OPPS_DIRECT;
+        pOut->pPoint1 = pIn1->pLeft;
+        pOut->pPoint2 = pIn2->pRight;
+    }
+    return rc;
+}
+
+void CheckNewSame(AstParse *pParse,LinkNode *pSame,SameLine *pIn)
+{
+    LinkNode *p;
+    SameLine *pPair;
+    SameLine *pNew;
+    GeomType ele1 = {0};
+    GeomType ele2 = {0};
+    int rc = -1;
+    p = pSame;
+    do{
+        pPair = (SameLine *)p->pVal;
+        rc = GetSegDirect(pParse,pPair->pSeg1,pIn->pSeg1,&ele1);
+        if(rc>0){
+            if(GetSegDirect(pParse,pPair->pSeg2,pIn->pSeg2,&ele2)==rc)
+            {
+                pNew = SetSamePair(pParse,&ele1,&ele2);
+                InsertLinkNode(pParse,pSame,pNew);
+                break;
+            }
+        }
+        p = p->pNext;
+    }while(!p->isHead);
+}
+
+void LinkLineSeg(AstParse *pParse,LineSeg *pSeg1,LineSeg *pSeg2)
+{
+    LineSeg *p = pSeg2;
+    while(!p->isHead) p = p->pNext;
+    p->isHead = 0;//清楚掉第二个链表的头结点
+    //把第二个链表合到第一个上面
+    pSeg1->pPre->pNext = pSeg2->pNext;//从pSeg2和下个结点处切开
+    pSeg2->pNext->pPre = pSeg1->pPre;
+    pSeg2->pNext = pSeg1;
+    pSeg1->pPre = pSeg2;
+}
+
+SameLine *SetSamePair(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
 {
     SameLine *pPair;
     LineSeg **ppSeg1;
     LineSeg **ppSeg2;
+    int iNum1,iNum2;
 
     pPair = (SameLine *)Malloc(sizeof(SameLine));
     ppSeg1 = GetLineSeg(pLeft->pPoint1,pLeft->pPoint2);
     ppSeg2 = GetLineSeg(pRight->pPoint1,pRight->pPoint2);
-    pPair->pSeg1 = *ppSeg1;
-    pPair->pSeg2 = *ppSeg2;
+    iNum1 =  (*ppSeg1)->pLine->iNum;
+    iNum2 =  (*ppSeg2)->pLine->iNum;
+    if(iNum1<iNum2){
+        pPair->pSeg1 = *ppSeg1;
+        pPair->pSeg2 = *ppSeg2;
+    }
+    else{
+        pPair->pSeg1 = *ppSeg2;
+        pPair->pSeg2 = *ppSeg1;
+    }
+    LinkLineSeg(pParse,*ppSeg1,*ppSeg2);
+    return pPair;
+}
+
+void SetSameSeg(AstParse *pParse,PlaneSeg *pPSeg,GeomType *pLeft,GeomType *pRight)
+{
+    SameLine *pPair;
+    pPair = SetSamePair(pParse,pLeft,pRight);
     //PrintSameLine(pPair);
     if(pPSeg->pSame==NULL){
         pPSeg->pSame =  NewLinkHead(pPair,sizeof(LinkNode));
     }
     else{
         InsertLinkNode(pParse,pPSeg->pSame,pPair);
+        CheckNewSame(pParse,pPSeg->pSame,pPair);
     }
 }
 

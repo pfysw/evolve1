@@ -14,6 +14,9 @@
 #define ELE_LINE  1
 #define ELE_ANGLE 2
 
+#define SAME_DIRECT 1
+#define OPPS_DIRECT 2
+
 typedef struct PoinData PoinData;
 typedef struct LinePoint LinePoint;
 struct LinePoint
@@ -131,5 +134,6 @@ LineHash *CreatLineHash(int nSlot);
 PlaneHash *CreatPlaneHash(int nSlot);
 void ParseGeomEle(AstParse *pParse,Vector *pSet);
 void CloseGeomSet(AstParse *pParse);
+SameLine *SetSamePair(AstParse *pParse,GeomType *pLeft,GeomType *pRight);
 
 #endif /* GEOMETRY_H_ */
