@@ -28,6 +28,9 @@
 #define A_NB_NAB  26
 #define A_NB_B_NA  27
 
+
+#define MID_NUM 200
+
 typedef struct AddSeq{
     TokenInfo *pNode;
     TokenInfo *pSeq;

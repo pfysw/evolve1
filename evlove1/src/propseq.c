@@ -427,6 +427,7 @@ TokenInfo * PropGenNegSeq(
     else
     {
         pNeg = NewNegNode(pParse,pRight);
+        pNeg->bNeg = 1;
     }
     if(pLeft->type==PROP_IMPL){
         apCopy[0] = NewNegNode(pParse,pLeft);
@@ -464,7 +465,18 @@ TokenInfo * PropGenNegSeq(
     return pR;
 }
 
-#define MID_NUM 100
+
+
+void FreeMidMem(AddSeq **ppMid)
+{
+    int i;
+    for(i=0;i<MID_NUM;i++)
+    {
+        Free(ppMid[i]);
+    }
+    Free(ppMid);
+}
+
 TokenInfo * PropGenSeq(
         AstParse *pParse,
         TokenInfo **ppTest,
@@ -472,7 +484,7 @@ TokenInfo * PropGenSeq(
 {
     TokenInfo *pR = NULL;
     AddSeq apMidFomula[MID_NUM] = {0};
-   // AddSeq **ppMid = (AddSeq **)malloc(sizeof(AddSeq *)*MID_NUM);
+    //AddSeq **ppMid = (AddSeq **)Malloc(sizeof(AddSeq *)*MID_NUM);
     AddSeq *ppMid[MID_NUM];
     TokenInfo *apCopy[10] = {0};
     TokenInfo *pNoNeg;
@@ -484,8 +496,9 @@ TokenInfo * PropGenSeq(
     for(i=0;i<MID_NUM;i++)
     {
         ppMid[i] = &apMidFomula[i];
+//        ppMid[i] = (AddSeq *)Malloc(sizeof(AddSeq));
+//        memset(ppMid[i],0,sizeof(AddSeq));
     }
-
     while(pProp->type==PROP_NEG){
         pNoNeg = pProp->pLeft;
         if(pNoNeg->type==PROP_NEG){
@@ -496,16 +509,19 @@ TokenInfo * PropGenSeq(
             apCopy[0] = NewImplyNode(pParse,pNoNeg,pProp,"->");
             apCopy[1] = PropGenSeq(pParse,ppTest,apCopy[0]);
             if(apCopy[1]==NULL){
+                //FreeMidMem(ppMid);
                 return NULL;
             }
             apCopy[2] = NewNumNode(pParse,NNA_A);
             apCopy[3] = NewImplyNode(pParse,apCopy[2],apCopy[1],">>");
             apCopy[4] = NewNumNode(pParse,NA_A_A);
             pR = NewImplyNode(pParse,apCopy[3],apCopy[4],">");
+            //FreeMidMem(ppMid);
             return pR;
         }
     }
     if(pProp->type==PROP_SYMB){
+        //FreeMidMem(ppMid);
         return pR;
     }
     assert(pProp->type==PROP_IMPL);
@@ -518,6 +534,7 @@ TokenInfo * PropGenSeq(
         ppMid[1]->pSeq = NewSymbNode(pParse,"B");
         idx = 2;
         do{
+          assert(idx<MID_NUM);
           max = idx;
           for(i=offset;i<max;i++){
 #ifdef GEN_DEBUG
@@ -548,6 +565,7 @@ TokenInfo * PropGenSeq(
                       apCopy[2] = NewImplyNode(pParse,apCopy[1],apCopy[3],">");
                       pR = NewImplyNode(pParse,ppMid[0]->pSeq,apCopy[2],"+");
                       //PrintAst(pParse,pR);
+                      //FreeMidMem(ppMid);
                       return pR;
                   }
                   if(ppMid[j]->pNode->type==PROP_IMPL )
@@ -588,9 +606,14 @@ TokenInfo * PropGenSeq(
           }
           offset = max;
         }while(offset<idx);
-        if(pProp->pLeft->type!=PROP_SYMB)
+        if(pProp->pLeft->type==PROP_IMPL)
         {
             pR = PropGenNegSeq(pParse,ppTest,pProp,0);
+        }
+        else if(pProp->pLeft->type==PROP_NEG){
+            if(!pProp->pLeft->bNeg){
+                pR = PropGenNegSeq(pParse,ppTest,pProp,0);
+            }
         }
     }
     else
@@ -602,6 +625,7 @@ TokenInfo * PropGenSeq(
             apCopy[3] = NewImplyNode(pParse,pProp->pLeft,pNoNeg->pLeft,"->");
             apCopy[0] = PropGenSeq(pParse,ppTest,apCopy[3]);
             if(apCopy[0]==NULL){
+                //FreeMidMem(ppMid);
                 return NULL;
             }
             apCopy[1] = NewNumNode(pParse,A_NNA);
@@ -610,6 +634,7 @@ TokenInfo * PropGenSeq(
            // assert(apCopy[0]->op==OP_ADD);
 //            apCopy[2] = NewImplyNode(pParse,apCopy[0]->pRight,apCopy[1],">");
 //            pR = NewImplyNode(pParse,apCopy[0]->pLeft,apCopy[2],"+");
+            //FreeMidMem(ppMid);
             return pR;
         }
 
@@ -624,6 +649,7 @@ TokenInfo * PropGenSeq(
 #endif
             apCopy[1] = PropGenSeq(pParse,ppTest,apCopy[0]);//A->B
             if(apCopy[1]==NULL){
+                //FreeMidMem(ppMid);
                 return NULL;
             }
             apCopy[3] = NewNegNode(pParse,pNoNeg->pRight);
@@ -634,6 +660,7 @@ TokenInfo * PropGenSeq(
 #endif
             apCopy[4] = PropGenSeq(pParse,ppTest,apCopy[2]);//A->~C
             if(apCopy[4]==NULL){
+                //FreeMidMem(ppMid);
                 return NULL;
             }
             apCopy[5] = NewNumNode(pParse,A_NB_NAB);//B->(~C->~(B->C))
@@ -654,5 +681,6 @@ TokenInfo * PropGenSeq(
         }
     }
     //assert(pR!=NULL);
+    //FreeMidMem(ppMid);
     return pR;
 }

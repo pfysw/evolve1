@@ -48,7 +48,8 @@ struct TokenInfo{
     u8 bSubst:2;
     u8 bExist:2;
     u8 isDeduction:2;
-    u8 isNewTemp:2;
+    u8 isNewTemp:1;
+    u8 bNeg:1;
     char symb;
     char copy;
 };

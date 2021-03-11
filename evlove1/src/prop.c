@@ -106,7 +106,7 @@ int GetDiffNode(
         n = 0;
     }
     cnt++;
-    if( cnt>11 )
+    if( cnt>15 )
     {
         pParse->bDiscard = 1;
     }
@@ -812,7 +812,8 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
         FreeMemPool(pParse,&pParse->pMem);
     }
    // pDemo = CopyAstTree(pParse,ppDbSet[56],0);
-    pDemo = CopyAstTree(pParse,ppDbSet[31],0);
+    //pDemo = CopyAstTree(pParse,ppDbSet[31],0);
+    pDemo = CopyAstTree(pParse,ppDbSet[62],0);
     PrintAst(pParse,pDemo);
     for(i=0; i<pVec->n; i++)
     {
@@ -823,7 +824,6 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
         }
         pR = SubstMpLeft(pParse,pDemo,ppDbSet[i]);
         if(pR!=NULL){
-
             pLeft = PropGenSeq(pParse,NULL,pR);
             if(pLeft!=NULL){
                 printf("get left %d\n",i+1);
@@ -837,7 +837,6 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
                 PrintAst(pParse,ppDbSet[i]);
                 log_a("");
             }
-
             FreeAstTree(pParse,&pR,ppTemp);
         }
         FreeMemPool(pParse,&pParse->pMem);
