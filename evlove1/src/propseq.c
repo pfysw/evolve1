@@ -410,7 +410,7 @@ TokenInfo * PropGenNegSeq(
         AstParse *pParse,
         TokenInfo **ppTest,
         TokenInfo *pProp,
-        u8 bNeg)
+        u8 bNegFlag)
 {
     TokenInfo *pR = NULL;
     TokenInfo *apCopy[10] = {0};
@@ -436,16 +436,19 @@ TokenInfo * PropGenNegSeq(
         if(apCopy[2]==NULL){
             return NULL;
         }
-        if(bNeg){
+        if(bNegFlag){
             apCopy[3] = NewNumNode(pParse,A_NB_B_NA);
         }
         else{
+            //如果pRight->type==PROP_NEG那么不可能进这个分支
+            assert(pNeg->type==PROP_NEG);
             apCopy[3] = pParse->apAxiom[2];
         }
         pR = NewImplyNode(pParse,apCopy[2],apCopy[3],">");
     }
     else if(pLeft->pLeft->type!=PROP_SYMB)
     {
+        assert(pLeft->type==PROP_NEG);
         apCopy[0] = pLeft->pLeft;
         apCopy[1] = NewImplyNode(pParse,pNeg,apCopy[0],"->");
         apCopy[2] = PropGenSeq(pParse,ppTest,apCopy[1]);
@@ -453,10 +456,12 @@ TokenInfo * PropGenNegSeq(
             return NULL;
         }
         apCopy[3] = NewNumNode(pParse,AB_NBNA);
-        if(!bNeg)//~A->B  (~B->A)->(~A->~~B)->~A->B
+        if(!bNegFlag)//~A->B  (~B->A)->(~A->~~B)->~A->B
         {
+            assert(pNeg->type==PROP_NEG);
             apCopy[4] = NewNumNode(pParse,NNA_A);
-            pR = NewImplyNode(pParse,apCopy[2],apCopy[4],">>");
+            apCopy[5] = NewImplyNode(pParse,apCopy[2],apCopy[3],">");
+            pR = NewImplyNode(pParse,apCopy[5],apCopy[4],">>");
         }
         else{
             pR = NewImplyNode(pParse,apCopy[2],apCopy[3],">");

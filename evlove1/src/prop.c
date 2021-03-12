@@ -795,7 +795,7 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
         FreeMemPool(pParse,&pParse->pMem);
     }
     EndSqliteWrite(pParse);
-
+    pDemo = CopyAstTree(pParse,ppTest[44],0);
 #if 1
     pVec = InitTheoremSet(pParse);
     SqliteReadTable(pParse,pParse->pDb->db,"TheoremSet",pVec);
@@ -812,8 +812,8 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
         FreeMemPool(pParse,&pParse->pMem);
     }
    // pDemo = CopyAstTree(pParse,ppDbSet[56],0);
-    //pDemo = CopyAstTree(pParse,ppDbSet[31],0);
-    pDemo = CopyAstTree(pParse,ppDbSet[62],0);
+   // pDemo = CopyAstTree(pParse,ppDbSet[31],0);
+   // pDemo = CopyAstTree(pParse,ppDbSet[62],0);
     PrintAst(pParse,pDemo);
     for(i=0; i<pVec->n; i++)
     {
@@ -827,6 +827,7 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
             pLeft = PropGenSeq(pParse,NULL,pR);
             if(pLeft!=NULL){
                 printf("get left %d\n",i+1);
+                //PrintAst(pParse,pLeft);
                 //PrintAst(pParse,pR);
                 PropMpSeq(pParse,ppTest,pLeft);
                 PrintAst(pParse,pLeft->pTheorem);
@@ -842,6 +843,7 @@ void  SubstMpTest(AstParse *pParse,Vector *pSet)
         FreeMemPool(pParse,&pParse->pMem);
     }
     FreeAstTree(pParse,&pDemo,ppTemp);
-#endif
     FreeVector(pParse,pVec);
+#endif
+
 }
