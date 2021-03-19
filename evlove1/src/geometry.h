@@ -17,6 +17,12 @@
 #define SAME_DIRECT 1
 #define OPPS_DIRECT 2
 
+#define FORWARD_DIRECT 1
+#define BACK_DIRECT 2
+
+#define DEG_60  60
+
+typedef struct LineData LineData;
 typedef struct PoinData PoinData;
 typedef struct LinePoint LinePoint;
 struct LinePoint
@@ -45,18 +51,39 @@ struct PlaneData
 };
 
 
+typedef struct CornerInfo CornerInfo;
+struct CornerInfo
+{
+    PoinData *pVertex;
+    PoinData *pLeft;
+    PoinData *pRight;
+    LineData *pLine1;
+    LineData *pLine2;
+    int val;
+    u8 bl;
+    u8 br;
+};
+
+typedef struct TempInfo TempInfo;
+struct TempInfo{
+    int a;
+    int b;
+    PoinData *apPoint[3];
+};
+
 typedef struct PlaneSeg PlaneSeg;
 struct PlaneSeg
 {
+    //距离相等的两条平行线
     PlaneSeg *pNext;
     PlaneSeg *pPre;
     PlaneData *pPlane;
     u8 isHead;
+    CornerInfo *pCorner;
     LinkNode *pSame;
 };
 
 
-typedef struct LineData LineData;
 struct LineData
 {
     int iNum;
@@ -90,6 +117,7 @@ struct PoinData
     int nArray;
     char *zSymb;
     LineSeg **ppSeg;
+    PlaneData *pPlane;
 };
 
 typedef struct PointHash PointHash;
@@ -126,6 +154,7 @@ struct GeomType
     LineData *pLine2;
     PoinData *pPoint1;
     PoinData *pPoint2;
+    PoinData *pVertex;
 };
 
 
@@ -135,5 +164,6 @@ PlaneHash *CreatPlaneHash(int nSlot);
 void ParseGeomEle(AstParse *pParse,Vector *pSet);
 void CloseGeomSet(AstParse *pParse);
 SameLine *SetSamePair(AstParse *pParse,GeomType *pLeft,GeomType *pRight);
+PlaneSeg *SetPlaneHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight);
 
 #endif /* GEOMETRY_H_ */
