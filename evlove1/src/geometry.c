@@ -298,7 +298,7 @@ void TravLinePoint(LineData *pLine)
 }
 
 
-LineSeg** GetLineSeg(PoinData *pLeft,PoinData *pRight)
+LineSeg** GetLineSegAddr(PoinData *pLeft,PoinData *pRight)
 {
     int iLeft;
     int iRight;
@@ -330,11 +330,11 @@ PlaneSeg** GetPlaneSeg(LineData *pLeft,LineData *pRight)
 
 void ResetLine(AstParse *pParse,GeomType *pDst,LineData *pLine)
 {
-    LineSeg** ppSeg;
+    LineSeg* pSeg;
     int nLine;
     LineHash *pLineSet = pParse->pLineSet;
 
-    ppSeg = GetLineSeg(pDst->pPoint1,pDst->pPoint2);
+    pSeg = CreateNewLine(pParse,pDst->pPoint1,pDst->pPoint2);
 
     log_c("reset: ");
     nLine = --pParse->pLineSet->nLine;
@@ -343,7 +343,7 @@ void ResetLine(AstParse *pParse,GeomType *pDst,LineData *pLine)
     FreeLinePoint(pParse,pDst->pLine1->pHead);
     Free(pDst->pLine1->ppSeg);
     Free(pDst->pLine1);
-    (*ppSeg)->pLine = pLine;
+    pSeg->pLine = pLine;
 }
 
 LineSeg *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight)
@@ -430,6 +430,7 @@ void SetSegPoint(LineSeg *pSeg,PoinData *pLeft,PoinData *pRight)
     }
 }
 
+//如果已经创建了则直接返回
 LineSeg *CreateNewLine(AstParse *pParse,PoinData *pPoint1,PoinData *pPoint2)
 {
     int iLeft;
@@ -491,8 +492,8 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
     {
         assert(0);//未测试
         assert(pRight->type==ELE_LINE);
-        ppLs1 = GetLineSeg(pLeft->pPoint1,pRight->pPoint1);
-        ppLs2 = GetLineSeg(pLeft->pPoint1,pRight->pPoint2);
+        ppLs1 = GetLineSegAddr(pLeft->pPoint1,pRight->pPoint1);
+        ppLs2 = GetLineSegAddr(pLeft->pPoint1,pRight->pPoint2);
         assert(*ppLs1==NULL);
         assert(*ppLs2==NULL);
         *ppLs1 = (LineSeg*)NewLinkHead(pRight->pLine1,sizeof(LineSeg));
@@ -505,8 +506,8 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
     }
     else if(pLeft->type==ELE_LINE)
     {
-        ppLs1 = GetLineSeg(pRight->pPoint1,pLeft->pPoint1);
-        ppLs2 = GetLineSeg(pRight->pPoint1,pLeft->pPoint2);
+        ppLs1 = GetLineSegAddr(pRight->pPoint1,pLeft->pPoint1);
+        ppLs2 = GetLineSegAddr(pRight->pPoint1,pLeft->pPoint2);
         if(*ppLs1!=NULL){
             assert(*ppLs2==NULL);
             pLoc = FindPointLoc((*ppLs1)->pLine->pHead,pLeft->pPoint1);
@@ -575,7 +576,7 @@ int GetLinesegDirect(LineData *pLine,PoinData *pPoint1,PoinData *pPoint2)
     return rc;
 }
 
-void SetAngleHash(AstParse *pParse,GeomType *pAngle,TokenInfo *pVal)
+PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle,TokenInfo *pVal)
 {
     PlaneSeg *pSeg;
     GeomType ele1;
@@ -595,7 +596,9 @@ void SetAngleHash(AstParse *pParse,GeomType *pAngle,TokenInfo *pVal)
         pCorner->pVertex = pAngle->pVertex;
         pCorner->pLeft = pAngle->pPoint1;
         pCorner->pRight = pAngle->pPoint2;
-        pCorner->val = atoi(pVal->zSymb);
+        if(pVal!=NULL){
+            pCorner->val = atoi(pVal->zSymb);
+        }
         pCorner->pLine1 = pAngle->pLine1;
         pCorner->pLine2 = pAngle->pLine2;
         pCorner->bl = bl;
@@ -603,6 +606,7 @@ void SetAngleHash(AstParse *pParse,GeomType *pAngle,TokenInfo *pVal)
         pSeg->pCorner = pCorner;
         pCorner->pVertex->pPlane = pSeg->pPlane;
     }
+    return pSeg;
 }
 
 //0:没找到相同点 1：同向  2：异向
@@ -677,7 +681,10 @@ void CheckNewSame(AstParse *pParse,LinkNode *pSame,SameLine *pIn)
     SameLine *pNew;
     GeomType ele1 = {0};
     GeomType ele2 = {0};
+    LineSeg **ppSeg1;
+    LineSeg **ppSeg2;
     int rc = -1;
+
     p = pSame;
     do{
         pPair = (SameLine *)p->pVal;
@@ -685,7 +692,9 @@ void CheckNewSame(AstParse *pParse,LinkNode *pSame,SameLine *pIn)
         if(rc>0){
             if(GetSegDirect(pParse,pPair->pSeg2,pIn->pSeg2,&ele2)==rc)
             {
-                pNew = SetSamePair(pParse,&ele1,&ele2);
+                ppSeg1 = GetLineSegAddr(ele1.pPoint1,ele1.pPoint2);
+                ppSeg2 = GetLineSegAddr(ele2.pPoint1,ele2.pPoint2);
+                pNew = SetSamePair(pParse,ppSeg1,ppSeg2);
                 InsertLinkNode(pParse,pSame,pNew);
                 break;
             }
@@ -706,16 +715,12 @@ void LinkLineSeg(AstParse *pParse,LineSeg *pSeg1,LineSeg *pSeg2)
     pSeg1->pPre = pSeg2;
 }
 
-SameLine *SetSamePair(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
+SameLine *SetSamePair(AstParse *pParse,LineSeg **ppSeg1,LineSeg **ppSeg2)
 {
     SameLine *pPair;
-    LineSeg **ppSeg1;
-    LineSeg **ppSeg2;
     int iNum1,iNum2;
 
     pPair = (SameLine *)Malloc(sizeof(SameLine));
-    ppSeg1 = GetLineSeg(pLeft->pPoint1,pLeft->pPoint2);
-    ppSeg2 = GetLineSeg(pRight->pPoint1,pRight->pPoint2);
     iNum1 =  (*ppSeg1)->pLine->iNum;
     iNum2 =  (*ppSeg2)->pLine->iNum;
     if(iNum1<iNum2){
@@ -738,15 +743,38 @@ void SwapTemp(TempInfo *pTemp)
     pTemp->b = c;
 }
 
-void SetEqualTrgl(AstParse *pParse,TempInfo *pTemp,LineSeg* pSeg1)
+void InsertSamePair(AstParse *pParse,PlaneSeg *pPSeg,SameLine *pPair)
 {
-    LineSeg** ppSeg3;
-    LineSeg* pSeg3;
-    ppSeg3 = GetLineSeg(pTemp->apPoint[1],pTemp->apPoint[2]);
-    if(*ppSeg3==NULL){
-        pSeg3 = CreateNewLine(pParse,pTemp->apPoint[1],pTemp->apPoint[2]);
-        assert(*ppSeg3==pSeg3);
+    if(pPSeg->pSame==NULL){
+        pPSeg->pSame =  NewLinkHead(pPair,sizeof(LinkNode));
     }
+    else{
+        InsertLinkNode(pParse,pPSeg->pSame,pPair);
+        CheckNewSame(pParse,pPSeg->pSame,pPair);
+    }
+}
+
+void SetEqualTrgl(AstParse *pParse,TempInfo *pTemp)
+{
+    LineSeg* apSeg[3];
+    SameLine *pPair;
+    GeomType ele1;
+    GeomType ele2;
+    GeomType ele;
+    PlaneSeg *pPSeg;
+
+    apSeg[2] = CreateNewLine(pParse,pTemp->apPoint[1],pTemp->apPoint[2]);
+    apSeg[1] = CreateNewLine(pParse,pTemp->apPoint[0],pTemp->apPoint[2]);
+    apSeg[0] = CreateNewLine(pParse,pTemp->apPoint[0],pTemp->apPoint[1]);
+    LinkLineSeg(pParse,apSeg[0],apSeg[2]);
+    pPair = SetSamePair(pParse,&apSeg[0],&apSeg[2]);
+    ele1 = GetPointEle(pTemp->apPoint[1]);
+    ele2 = GetLineEle(apSeg[2]->pLine);
+    ele2.pPoint1 = pTemp->apPoint[1];
+    ele2.pPoint2 = pTemp->apPoint[2];
+    ele = GetAngleEle(pParse,&ele1,&ele2);
+    pPSeg = SetAngleHash(pParse,&ele,NULL);
+    InsertSamePair(pParse,pPSeg,pPair);
 }
 
 void SetSameSeg(AstParse *pParse,PlaneSeg *pPSeg,GeomType *pLeft,GeomType *pRight)
@@ -756,15 +784,14 @@ void SetSameSeg(AstParse *pParse,PlaneSeg *pPSeg,GeomType *pLeft,GeomType *pRigh
     PlaneSeg** ppSeg;
     CornerInfo *pCorner;
     int val;//角度
-    pPair = SetSamePair(pParse,pLeft,pRight);
+    LineSeg **ppSeg1;
+    LineSeg **ppSeg2;
+
+    ppSeg1 = GetLineSegAddr(pLeft->pPoint1,pLeft->pPoint2);
+    ppSeg2 = GetLineSegAddr(pRight->pPoint1,pRight->pPoint2);
+    pPair = SetSamePair(pParse,ppSeg1,ppSeg2);
     //PrintSameLine(pPair);
-    if(pPSeg->pSame==NULL){
-        pPSeg->pSame =  NewLinkHead(pPair,sizeof(LinkNode));
-    }
-    else{
-        InsertLinkNode(pParse,pPSeg->pSame,pPair);
-        CheckNewSame(pParse,pPSeg->pSame,pPair);
-    }
+    InsertSamePair(pParse,pPSeg,pPair);
     if(HavePubPoint(pPair->pSeg1,pPair->pSeg2,&tmp)){
         //tmp.apPoint[0]是顶点
         ppSeg = GetPlaneSeg(pPair->pSeg1->pLine,pPair->pSeg2->pLine);
@@ -781,7 +808,7 @@ void SetSameSeg(AstParse *pParse,PlaneSeg *pPSeg,GeomType *pLeft,GeomType *pRigh
             val = 180-val;
         }
         if(val==DEG_60){
-            SetEqualTrgl(pParse,&tmp,pPair->pSeg1);
+            SetEqualTrgl(pParse,&tmp);
         }
         //printf("corner %d\n",val);
     }
@@ -887,9 +914,8 @@ GeomType SetGeomHash(AstParse *pParse,TokenInfo *pAst)
             }
 
         }
-        else{
+        else if(ele1.type==ELE_ANGLE){
             SetAngleHash(pParse,&ele1,pAst->pRight);
-            assert(ele1.type==ELE_ANGLE);
         }
     }
     else

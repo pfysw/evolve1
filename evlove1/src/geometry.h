@@ -163,7 +163,8 @@ LineHash *CreatLineHash(int nSlot);
 PlaneHash *CreatPlaneHash(int nSlot);
 void ParseGeomEle(AstParse *pParse,Vector *pSet);
 void CloseGeomSet(AstParse *pParse);
-SameLine *SetSamePair(AstParse *pParse,GeomType *pLeft,GeomType *pRight);
+SameLine *SetSamePair(AstParse *pParse,LineSeg **ppSeg1,LineSeg **ppSeg2);
 PlaneSeg *SetPlaneHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight);
+LineSeg *CreateNewLine(AstParse *pParse,PoinData *pPoint1,PoinData *pPoint2);
 
 #endif /* GEOMETRY_H_ */
