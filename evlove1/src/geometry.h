@@ -101,6 +101,7 @@ struct LineSeg
     u8 isHead;
     PoinData *pLeft;
     PoinData *pRight;
+    LinkNode *pSame;//2个端点上还有的相等的角
 };
 
 typedef struct SameLine SameLine;
@@ -110,6 +111,12 @@ struct SameLine
     LineSeg *pSeg2;
 };
 
+typedef struct SameAngle SameAngle;
+struct SameAngle
+{
+    PlaneSeg *pSeg1;
+    PlaneSeg *pSeg2;
+};
 
 struct PoinData
 {
@@ -166,5 +173,6 @@ void CloseGeomSet(AstParse *pParse);
 SameLine *SetSamePair(AstParse *pParse,LineSeg **ppSeg1,LineSeg **ppSeg2);
 PlaneSeg *SetPlaneHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight);
 LineSeg *CreateNewLine(AstParse *pParse,PoinData *pPoint1,PoinData *pPoint2);
+void FreeSamePair(LinkNode *pSame,int type);
 
 #endif /* GEOMETRY_H_ */

@@ -4,7 +4,9 @@
 //(B-exist E)-A;
 (A-E) = (B-D);
 (B-D)-F;
+//(B-F)-D;
 (B-F) = (B-E);
+(B-A) = (B-C);
 end;
 exist E right (B-A);
 condition;
