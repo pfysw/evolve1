@@ -740,9 +740,13 @@ void CheckNewSame(AstParse *pParse,LinkNode *pSame,SameLine *pIn)
             {
                 ppSeg1 = GetLineSegAddr(ele1.pPoint1,ele1.pPoint2);
                 ppSeg2 = GetLineSegAddr(ele2.pPoint1,ele2.pPoint2);
+                if( ppSeg1== ppSeg2) {
+                    continue;
+                }
                 pNew = SetSamePair(pParse,ppSeg1,ppSeg2);
-               // PrintSameLine(pNew);
+                PrintSameLine(pNew);
                 InsertLinkNode(pParse,pSame,pNew);
+                CheckOtherPair(pParse,pNew);
             }
         }
     }while(!p->isHead);
@@ -843,23 +847,95 @@ void SwapTemp(TempInfo *pTemp)
     pTemp->b = c;
 }
 
+int HaveSamePair(LinkNode *pSame,LineSeg *pSeg1,LineSeg *pSeg2)
+{
+    int rc = 0;
+    LinkNode *p;
+    SameLine *pPair;
+    p = pSame;
+    do{
+        pPair = (SameLine *)p->pVal;
+        if(pSeg1==pPair->pSeg1){
+            if(pSeg2==pPair->pSeg2){
+                rc = 1;
+                break;
+            }
+        }
+        else if(pSeg1==pPair->pSeg2){
+            if(pSeg2==pPair->pSeg1){
+                rc = 1;
+                break;
+            }
+        }
+        p = p->pNext;
+    }while(!p->isHead);
+
+    return rc;
+}
+
+void InsertSameSeg(AstParse *pParse,LineSeg *p,LineSeg *pSeg)
+{
+    PlaneSeg *pPSeg;
+    GeomType ele1;
+    GeomType ele2;
+    LineData *pLine1;
+    LineData *pLine2;
+    SameLine *pNewPair;
+    int rc = 0;
+
+    pLine1 = pSeg->pLine;
+    pLine2 = p->pLine;
+    pPSeg = GetPlaneSeg(pLine1,pLine2);
+    if(pPSeg==NULL){
+        ele1 = GetLineEle(pLine1);
+        ele2 = GetLineEle(pLine2);
+        pPSeg = SetPlaneHash(pParse,&ele1,&ele2);
+        pNewPair = SetSamePair(pParse,&p,&pSeg);
+        InsertSamePair(pParse,pPSeg,pNewPair);
+    }
+    else
+    {
+        rc = HaveSamePair(pPSeg->pSame,p,pSeg);
+        if(!rc){
+            pNewPair = SetSamePair(pParse,&p,&pSeg);
+            InsertSamePair(pParse,pPSeg,pNewPair);
+        }
+    }
+}
+
+void CheckOtherPair(AstParse *pParse,SameLine *pPair)
+{
+    LineSeg *p;
+
+    p = pPair->pSeg1->pNext;
+    while(p!=pPair->pSeg1){
+        InsertSameSeg(pParse,p,pPair->pSeg1);
+        p = p->pNext;
+    };
+    p = pPair->pSeg2->pNext;
+    while(p!=pPair->pSeg2){
+        InsertSameSeg(pParse,p,pPair->pSeg2);
+        p = p->pNext;
+    };
+}
+
 void InsertSamePair(AstParse *pParse,PlaneSeg *pPSeg,SameLine *pPair)
 {
     if(pPSeg->pSame==NULL){
         pPSeg->pSame =  NewLinkHead(pPair,sizeof(LinkNode));
 //        printf("head %p\n",pPSeg->pSame);
-//        PrintSameLine(pPair);
     }
     else{
         CheckNewSame(pParse,pPSeg->pSame,pPair);
         InsertLinkNode(pParse,pPSeg->pSame,pPair);
-//        printf("++++++\n");
-//        PrintSameLine(pPair);
-//        printf("-------\n");
+        CheckOtherPair(pParse,pPair);
 //        printf("pSame %p\n",pPSeg->pSame);
 //        PrintSameLine(pPSeg->pSame->pNext->pVal);
 //        printf("next %p\n",pPSeg->pSame->pNext);
     }
+    printf("++++++\n");
+    PrintSameLine(pPair);
+    printf("-------\n");
 }
 
 void InsertAnglePair(AstParse *pParse,LineSeg *pSeg,SameAngle *pPair)

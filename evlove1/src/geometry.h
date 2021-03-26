@@ -174,5 +174,7 @@ SameLine *SetSamePair(AstParse *pParse,LineSeg **ppSeg1,LineSeg **ppSeg2);
 PlaneSeg *SetPlaneHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight);
 LineSeg *CreateNewLine(AstParse *pParse,PoinData *pPoint1,PoinData *pPoint2);
 void FreeSamePair(LinkNode *pSame,int type);
+void InsertSamePair(AstParse *pParse,PlaneSeg *pPSeg,SameLine *pPair);
+void CheckOtherPair(AstParse *pParse,SameLine *pPair);
 
 #endif /* GEOMETRY_H_ */
