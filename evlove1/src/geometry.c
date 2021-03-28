@@ -130,6 +130,22 @@ void PrintSameLine(void *pVal)
     log_c("%s-%s\n",zLeft,zRight);
 }
 
+void PrintCorner(CornerInfo *pCorner)
+{
+    log_c("%s%s%s ",pCorner->pLeft->zSymb,
+            pCorner->pVertex->zSymb,
+            pCorner->pRight->zSymb);
+}
+
+
+void PrintSameAngle(SameAngle *pPair)
+{
+    log_c("same angle:");
+    PrintCorner(pPair->pSeg1->pCorner);
+    PrintCorner(pPair->pSeg2->pCorner);
+    log_a("");
+}
+
 void FreeSamePair(LinkNode *pSame,int type)
 {
     LinkNode *p;
@@ -160,7 +176,6 @@ void FreeSamePair(LinkNode *pSame,int type)
         }
     }
 }
-
 void FreePlaneSeg(LineData *pArray)
 {
     int i = 0;
@@ -632,6 +647,7 @@ PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle,TokenInfo *pVal)
     ele2 = GetLineEle(pAngle->pLine2);
     pSeg = SetPlaneHash(pParse,&ele1,&ele2);
     if(pSeg->pCorner==NULL){
+        assert(pAngle->pLine1!=pAngle->pLine2);
         bl = GetLinesegDirect(pAngle->pLine1,pAngle->pVertex,pAngle->pPoint1);
         br = GetLinesegDirect(pAngle->pLine2,pAngle->pVertex,pAngle->pPoint2);
         pCorner = (CornerInfo *)Malloc(sizeof(CornerInfo));
@@ -744,7 +760,7 @@ void CheckNewSame(AstParse *pParse,LinkNode *pSame,SameLine *pIn)
                     continue;
                 }
                 pNew = SetSamePair(pParse,ppSeg1,ppSeg2);
-                PrintSameLine(pNew);
+               // PrintSameLine(pNew);
                 InsertLinkNode(pParse,pSame,pNew);
                 CheckOtherPair(pParse,pNew);
             }
@@ -919,6 +935,125 @@ void CheckOtherPair(AstParse *pParse,SameLine *pPair)
     };
 }
 
+void CheckSAS(PlaneSeg *pPSeg,SameLine *pS,SameAngle *pA,AngleTemp *pTemp)
+{
+    PoinData *apLeft[2];
+    PoinData *apRight[2];
+    LinkNode *p;
+    SameLine *pPair;
+    PoinData *pPoint1;
+    PoinData *pPoint2;
+    int i,j;
+
+    pPoint1 = pA->pSeg1->pCorner->pVertex;
+    pPoint2 = pA->pSeg2->pCorner->pVertex;
+    p = pPSeg->pSame;
+    do{
+        pPair = (SameLine *)p->pVal;
+        apLeft[0] = pPair->pSeg1->pLeft;
+        apLeft[1] = pPair->pSeg1->pRight;
+        apRight[0] = pPair->pSeg2->pLeft;
+        apRight[1] = pPair->pSeg2->pRight;
+        for(i=0; i<2; i++){
+            for(j=0; j<2; j++){
+                if(pPoint1==apLeft[i] && pPoint2==apRight[j]){
+                    pTemp->apSide[0][1-pTemp->i] = apLeft[1-i];
+                    pTemp->apSide[1][1-pTemp->j] = apRight[1-j];
+                    PrintSameLine(pPair);
+                }
+                else if(pPoint2==apLeft[i] && pPoint1==apRight[j]){
+                    pTemp->apSide[0][1-pTemp->i] = apRight[1-j];
+                    pTemp->apSide[1][1-pTemp->j] = apLeft[1-i];
+                    PrintSameLine(pPair);
+                }
+            }
+        }
+        p = p->pNext;
+    }while(!p->isHead);
+}
+
+void CheckLineInAngle(AstParse *pParse,SameLine *pS,SameAngle *pA,AngleTemp *pTmp)
+{
+    LineData *apLine[2][2];
+    LineData *pLine1;
+    LineData *pLine2;
+    PlaneSeg *pPSeg;
+    PoinData *apPoint[2][2];
+    int i,j;
+
+    apPoint[0][0] = pS->pSeg1->pLeft;
+    apPoint[0][1] = pS->pSeg1->pRight;
+    apPoint[1][0] = pS->pSeg2->pLeft;
+    apPoint[1][1] = pS->pSeg2->pRight;
+    apLine[0][0] = pA->pSeg1->pCorner->pLine1;
+    apLine[0][1] = pA->pSeg1->pCorner->pLine2;
+    apLine[1][0] = pA->pSeg2->pCorner->pLine1;
+    apLine[1][1] = pA->pSeg2->pCorner->pLine2;
+    pLine1 = pS->pSeg1->pLine;
+    pLine2 = pS->pSeg2->pLine;
+    for(i=0; i<2; i++){
+        for(j=0; j<2; j++){
+            if(apLine[0][i]==pLine1 && apLine[1][j]==pLine2){
+                pPSeg = GetPlaneSeg(apLine[0][1-i],apLine[1][1-j]);
+                pTmp->apSide[0][i] = apPoint[0][pTmp->a[0]];
+                pTmp->apSide[1][j] = apPoint[1][pTmp->a[1]];
+                pTmp->i = i;
+                pTmp->j = i;
+                if(pPSeg->pSame){
+                    CheckSAS(pPSeg,pS,pA,pTmp);
+                }
+            }
+            else if(apLine[0][i]==pLine2 && apLine[1][j]==pLine1){
+                pPSeg = GetPlaneSeg(apLine[0][1-i],apLine[1][1-j]);
+                pTmp->apSide[0][i] = apPoint[1][pTmp->a[1]];
+                pTmp->apSide[1][j] = apPoint[0][pTmp->a[0]];
+                pTmp->i = i;
+                pTmp->j = j;
+                if(pPSeg->pSame){
+                    CheckSAS(pPSeg,pS,pA,pTmp);
+                }
+            }
+        }
+    }
+}
+
+void CheckSameAngle(AstParse *pParse,SameLine *pS)
+{
+    LineSeg *pSeg;
+    SameAngle *pPair;
+    LinkNode *p;
+    PoinData *pPoint1;
+    PoinData *pPoint2;
+    PoinData *apPoint[2][2];
+    AngleTemp tmp = {0};
+    int i,j;
+
+
+    apPoint[0][0] = pS->pSeg1->pLeft;
+    apPoint[0][1] = pS->pSeg1->pRight;
+    apPoint[1][0] = pS->pSeg2->pLeft;
+    apPoint[1][1] = pS->pSeg2->pRight;
+
+    for(i=0;i<2;i++){
+        for(j=0;j<2;j++){
+            pPoint1 = apPoint[0][i];
+            pPoint2 = apPoint[1][j];
+            pSeg = *(GetLineSegAddr(pPoint1,pPoint2));
+            if(pSeg!=NULL && pSeg->pSame!=NULL){
+                p = pSeg->pSame;
+                do{
+                    pPair = (SameAngle *)p->pVal;
+                    tmp.a[0] = 1-i;
+                    tmp.a[1] = 1-j;
+                    PrintSameAngle(pPair);
+                    CheckLineInAngle(pParse,pS,pPair,&tmp);
+                    p = p->pNext;
+                }while(!p->isHead);
+            }
+        }
+    }
+}
+
 void InsertSamePair(AstParse *pParse,PlaneSeg *pPSeg,SameLine *pPair)
 {
     if(pPSeg->pSame==NULL){
@@ -935,6 +1070,7 @@ void InsertSamePair(AstParse *pParse,PlaneSeg *pPSeg,SameLine *pPair)
     }
     printf("++++++\n");
     PrintSameLine(pPair);
+    CheckSameAngle(pParse,pPair);
     printf("-------\n");
 }
 
@@ -947,6 +1083,7 @@ void InsertAnglePair(AstParse *pParse,LineSeg *pSeg,SameAngle *pPair)
         InsertLinkNode(pParse,pSeg->pSame,pPair);
         //todo CheckAngleSame
     }
+    PrintSameAngle(pPair);
 }
 
 PlaneSeg *GetAndSetAngle(AstParse *pParse,PoinData *pVertex,LineSeg* pSeg)
@@ -981,10 +1118,13 @@ void SetEqualTrgl(AstParse *pParse,TempInfo *pTemp)
     pPair = SetSamePair(pParse,&apSeg[1],&apSeg[0]);
     apPSeg[2] = GetAndSetAngle(pParse,pTemp->apPoint[2],apSeg[2]);
     InsertSamePair(pParse,apPSeg[2],pPair);
-    apPSeg[0] = GetPlaneSeg(apSeg[2]->pLine,apSeg[1]->pLine);
 
+    apPSeg[0] = GetPlaneSeg(apSeg[2]->pLine,apSeg[1]->pLine);
     pAPair = SameAnglePair(pParse,apPSeg[1],apPSeg[0]);
     InsertAnglePair(pParse,apSeg[2],pAPair);
+
+    pAPair = SameAnglePair(pParse,apPSeg[2],apPSeg[0]);
+    InsertAnglePair(pParse,apSeg[1],pAPair);
 }
 
 void SetSameSeg(AstParse *pParse,PlaneSeg *pPSeg,GeomType *pLeft,GeomType *pRight)
