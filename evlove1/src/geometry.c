@@ -935,6 +935,21 @@ void CheckOtherPair(AstParse *pParse,SameLine *pPair)
     };
 }
 
+void SetSasEqual(SameAngle *pA,AngleTemp *pTemp)
+{
+    PoinData *pPoint1;
+    PoinData *pPoint2;
+    pPoint1 = pA->pSeg1->pCorner->pVertex;
+    pPoint2 = pA->pSeg2->pCorner->pVertex;
+
+    log_c("SAS:%s%s%s ",pTemp->apSide[0][0]->zSymb,
+                        pPoint1->zSymb
+                        ,pTemp->apSide[0][1]->zSymb);
+    log_a("%s%s%s ",pTemp->apSide[1][0]->zSymb,
+                        pPoint2->zSymb
+                        ,pTemp->apSide[1][1]->zSymb);
+}
+
 void CheckSAS(PlaneSeg *pPSeg,SameLine *pS,SameAngle *pA,AngleTemp *pTemp)
 {
     PoinData *apLeft[2];
@@ -957,14 +972,16 @@ void CheckSAS(PlaneSeg *pPSeg,SameLine *pS,SameAngle *pA,AngleTemp *pTemp)
         for(i=0; i<2; i++){
             for(j=0; j<2; j++){
                 if(pPoint1==apLeft[i] && pPoint2==apRight[j]){
-                    pTemp->apSide[0][1-pTemp->i] = apLeft[1-i];
-                    pTemp->apSide[1][1-pTemp->j] = apRight[1-j];
+                    pTemp->apSide[0][1] = apLeft[1-i];
+                    pTemp->apSide[1][1] = apRight[1-j];
                     PrintSameLine(pPair);
+                    SetSasEqual(pA,pTemp);
                 }
                 else if(pPoint2==apLeft[i] && pPoint1==apRight[j]){
-                    pTemp->apSide[0][1-pTemp->i] = apRight[1-j];
-                    pTemp->apSide[1][1-pTemp->j] = apLeft[1-i];
+                    pTemp->apSide[0][1] = apRight[1-j];
+                    pTemp->apSide[1][1] = apLeft[1-i];
                     PrintSameLine(pPair);
+                    SetSasEqual(pA,pTemp);
                 }
             }
         }
@@ -993,22 +1010,10 @@ void CheckLineInAngle(AstParse *pParse,SameLine *pS,SameAngle *pA,AngleTemp *pTm
     pLine2 = pS->pSeg2->pLine;
     for(i=0; i<2; i++){
         for(j=0; j<2; j++){
-            if(apLine[0][i]==pLine1 && apLine[1][j]==pLine2){
+            if((apLine[0][i]==pLine1 && apLine[1][j]==pLine2) ||
+               (apLine[0][i]==pLine2 && apLine[1][j]==pLine1))
+            {
                 pPSeg = GetPlaneSeg(apLine[0][1-i],apLine[1][1-j]);
-                pTmp->apSide[0][i] = apPoint[0][pTmp->a[0]];
-                pTmp->apSide[1][j] = apPoint[1][pTmp->a[1]];
-                pTmp->i = i;
-                pTmp->j = i;
-                if(pPSeg->pSame){
-                    CheckSAS(pPSeg,pS,pA,pTmp);
-                }
-            }
-            else if(apLine[0][i]==pLine2 && apLine[1][j]==pLine1){
-                pPSeg = GetPlaneSeg(apLine[0][1-i],apLine[1][1-j]);
-                pTmp->apSide[0][i] = apPoint[1][pTmp->a[1]];
-                pTmp->apSide[1][j] = apPoint[0][pTmp->a[0]];
-                pTmp->i = i;
-                pTmp->j = j;
                 if(pPSeg->pSame){
                     CheckSAS(pPSeg,pS,pA,pTmp);
                 }
@@ -1043,8 +1048,14 @@ void CheckSameAngle(AstParse *pParse,SameLine *pS)
                 p = pSeg->pSame;
                 do{
                     pPair = (SameAngle *)p->pVal;
-                    tmp.a[0] = 1-i;
-                    tmp.a[1] = 1-j;
+                    if(pPoint1==pPair->pSeg1->pCorner->pVertex){
+                        tmp.apSide[0][0] = apPoint[0][1-i];
+                        tmp.apSide[1][0] = apPoint[1][1-j];
+                    }
+                    else{
+                        tmp.apSide[0][0] = apPoint[1][1-j];
+                        tmp.apSide[1][0] = apPoint[0][1-i];
+                    }
                     PrintSameAngle(pPair);
                     CheckLineInAngle(pParse,pS,pPair,&tmp);
                     p = p->pNext;

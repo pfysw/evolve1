@@ -73,8 +73,6 @@ struct TempInfo{
 
 typedef struct AngleTemp AngleTemp;
 struct AngleTemp{
-    u8 a[2];//记录边的两个点中非顶点的那个
-    u8 i,j;
     //第一个下标表示哪个角，第二个下标表示哪条边
     PoinData *apSide[2][2];
 };
