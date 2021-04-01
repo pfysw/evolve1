@@ -42,6 +42,15 @@ struct LinkNode
     u8 isHead;
 };
 
+typedef struct LinkTemp LinkTemp;
+struct LinkTemp
+{
+    LinkNode *pHead;
+    void *pLeft;
+    void *pRight;
+    void *pIn;
+};
+
 
 typedef struct PlaneData PlaneData;
 struct PlaneData
@@ -185,5 +194,7 @@ void InsertSamePair(AstParse *pParse,PlaneSeg *pPSeg,
         LineSeg **ppSeg1,
         LineSeg **ppSeg2);
 void CheckOtherPair(AstParse *pParse,SameLine *pPair);
+PlaneSeg *GetAndSetAngle(AstParse *pParse,PoinData *pVertex,LineSeg* pSeg);
+void InsertAnglePair(AstParse *pParse,LineSeg *pSeg,SameAngle *pPair);
 
 #endif /* GEOMETRY_H_ */
