@@ -146,6 +146,31 @@ void PrintSameAngle(SameAngle *pPair)
     log_a("");
 }
 
+void PrintLine(LineData *pLine)
+{
+    LinePoint *p;
+    int i;
+    p = pLine->pHead->pNext;
+    for(i=0;i<2;i++){
+        log_c("%s",p->pPoint->zSymb);
+        p = p->pNext;
+    }
+    log_c(" ");
+}
+
+void PrintPlaneLine(PoinData *pVertex)
+{
+    PlaneData *pPlane = pVertex->pPlane;
+    LinkNode *p;
+    log_a("plane center %s:",pVertex->zSymb);
+    p=pPlane->pHead;
+    do{
+        PrintLine(p->pVal);
+        p = p->pNext;
+    }while(!p->isHead);
+
+}
+
 void FreeSamePair(LinkNode *pSame,int type)
 {
     LinkNode *p;
@@ -691,39 +716,39 @@ PoinData *GetIntersection(AstParse *pParse,LineData *pLine1,LineData *pLine2)
     return pPoint;
 }
 
-int GetLinkPos(LinkTemp *pTemp,int dir)
-{
-    LinkNode *p;
-    int pos = -1;//0:左边 1：中间 2：右边
-
-    for(p=pTemp->pHead;p->pVal!=pTemp->pLeft;p=p->pNext){
-        if(p->pVal==pTemp->pIn){
-            pos = 0;
-            break;
-        }
-    }
-    if(pos==-1){
-        for(;p!=pTemp->pRight;p=p->pNext){
-            if(p->pVal==pTemp->pIn){
-                pos = 1;
-                break;
-            }
-        }
-    }
-    if(pos==-1){
-        for(;!p->isHead;p=p->pNext){
-            if(p->pVal==pTemp->pIn){
-                pos = 2;
-                break;
-            }
-        }
-    }
-    if(dir!=FORWARD_DIRECT){
-        pos = 2-pos;
-    }
-    assert(pos!=-1);
-    return pos;
-}
+//int GetLinkPos(LinkTemp *pTemp,int dir)
+//{
+//    LinkNode *p;
+//    int pos = -1;//0:左边 1：中间 2：右边
+//
+//    for(p=pTemp->pHead;p->pVal!=pTemp->pLeft;p=p->pNext){
+//        if(p->pVal==pTemp->pIn){
+//            pos = 0;
+//            break;
+//        }
+//    }
+//    if(pos==-1){
+//        for(;p!=pTemp->pRight;p=p->pNext){
+//            if(p->pVal==pTemp->pIn){
+//                pos = 1;
+//                break;
+//            }
+//        }
+//    }
+//    if(pos==-1){
+//        for(;!p->isHead;p=p->pNext){
+//            if(p->pVal==pTemp->pIn){
+//                pos = 2;
+//                break;
+//            }
+//        }
+//    }
+//    if(dir!=FORWARD_DIRECT){
+//        pos = 2-pos;
+//    }
+//    assert(pos!=-1);
+//    return pos;
+//}
 
 LinkNode *GetLinkNode(LinkNode *pHead,void *pVal)
 {
@@ -740,27 +765,27 @@ LinkNode *GetLinkNode(LinkNode *pHead,void *pVal)
     return pFind;
 }
 
-void InsertLinkPos(PoinData *pVertex,LineData **apSide,LineData *pLine,int pos)
-{
-    int lineDirect = 0;
-    LinkNode *apPos[3];
-    LinkNode *apNode[2];
-    lineDirect = GetPlanesegDirect(pVertex->pPlane,apSide[0],apSide[1]);
-    apNode[0] = GetLinkNode(pVertex->pPlane->pHead,apSide[0]);
-    apNode[1] = GetLinkNode(pVertex->pPlane->pHead,apSide[1]);
-    if(lineDirect==FORWARD_DIRECT){
-        apPos[0] = apNode[0]->pPre;
-        apPos[1] = apNode[0];
-        apPos[2] = apNode[1];
-    }
-    else{
-        apPos[0] = apNode[1];
-        apPos[1] = apNode[1]->pPre;
-        apPos[2] = apNode[0];
-    }
-    //0:前 1：中 2：后
-    InsertLinkNode(NULL,apPos[pos],pLine);
-}
+//void InsertLinkPos(PoinData *pVertex,LineData **apSide,LineData *pLine,int pos)
+//{
+//    int lineDirect = 0;
+//    LinkNode *apPos[3];
+//    LinkNode *apNode[2];
+//    lineDirect = GetPlanesegDirect(pVertex->pPlane,apSide[0],apSide[1]);
+//    apNode[0] = GetLinkNode(pVertex->pPlane->pHead,apSide[0]);
+//    apNode[1] = GetLinkNode(pVertex->pPlane->pHead,apSide[1]);
+//    if(lineDirect==FORWARD_DIRECT){
+//        apPos[0] = apNode[0]->pPre;
+//        apPos[1] = apNode[0];
+//        apPos[2] = apNode[1];
+//    }
+//    else{
+//        apPos[0] = apNode[1];
+//        apPos[1] = apNode[1]->pPre;
+//        apPos[2] = apNode[0];
+//    }
+//    //0:前 1：中 2：后
+//    InsertLinkNode(NULL,apPos[pos],pLine);
+//}
 
 void InsertPlaneLine(
         AstParse *pParse,
@@ -771,82 +796,96 @@ void InsertPlaneLine(
     LinePoint *pNode;
     LinePoint *p;
     LineData *pLine;
-    PoinData *pLeft;
-    PoinData *pRight;
-    LineData *pRline;
-    LineData *pLline;
+    LineSeg *pRSeg;
+    LineSeg *pLSeg;
     LinkNode *pLineNode;
-    int pointDir = 0;
-    int lineDir = 0;
 
-    pNode = (LinePoint *)GetLinkNode(pBase->pHead,pPoint);
+    pLine = (*GetLineSegAddr(pPoint,pVertex))->pLine;
+    assert(pLine!=NULL);
+    if(GetLinkNode(pVertex->pPlane->pHead,pLine))
+    {
+        return;
+    }
+
+    pNode = (LinePoint *)GetLinkNode((LinkNode *)(pBase->pHead),(void*)pPoint);
+    if(pNode)
     for(p=pNode->pNext;;p=p->pNext){
         assert(p!=pNode);
-        pRline = *GetLineSegAddr(p->pPoint,pVertex);
-        if(pRline!=NULL){
-            pRight = p->pPoint;
+        pRSeg = *GetLineSegAddr(p->pPoint,pVertex);
+        if(pRSeg!=NULL){
+            if(GetLinkNode(pVertex->pPlane->pHead,pRSeg->pLine)){
+                break;
+            }
+
         }
     }
     for(p=pNode->pPre;;p=p->pPre){
         assert(p!=pNode);
-        pLline = *GetLineSegAddr(p->pPoint,pVertex);
-        if(pLline!=NULL){
-            pLeft = p->pPoint;
+        pLSeg = *GetLineSegAddr(p->pPoint,pVertex);
+        if(pLSeg!=NULL){
+            if(GetLinkNode(pVertex->pPlane->pHead,pLSeg->pLine)){
+                break;
+            }
         }
     }
-//    pointDir = GetLinesegDirect(pBase,pLeft,pRight);
-//    lineDir = GetPlanesegDirect(pVertex->pPlane,pLline,pRline);
-    pLineNode = GetLinkNode(pVertex->pPlane->pHead,pLline);
-    pLine = *GetLineSegAddr(pPoint,pVertex);
-    assert(pLine!=NULL);
-    if(pLineNode->pNext==pRline){
+
+    pLineNode = GetLinkNode(pVertex->pPlane->pHead,pLSeg->pLine);
+    if(pLineNode->pNext->pVal==pRSeg->pLine){
         InsertLinkNode(pParse,pLineNode,pLine);
     }
     else{
-        assert(pLineNode->pPre==pRline);
+        assert(pLineNode->pPre->pVal==pRSeg->pLine);
         InsertLinkNode(pParse,pLineNode->pPre,pLine);
     }
 }
 
-
 void InsertPlaneAngle(AstParse *pParse,GeomType *pAngle)
 {
-    PoinData *apBottom[2];
-    LineData *apSide[2];
-    LineSeg *pBaseSide;
-    LineSeg *pBtmSeg;
-    LinkNode *p;
-    LinkNode *pHead;
-    int pointDirect = 0;
-    int pos;
-    LinkTemp tmp;
-
-    pBaseSide = *GetLineSegAddr(pAngle->pPoint1,pAngle->pPoint2);
-    p = pAngle->pVertex->pPlane->pHead->pNext;
-    apSide[0] = (LineData *)p->pVal;
-    p = p->pNext;
-    apSide[1] = (LineData *)p->pVal;
-    apBottom[0] = GetIntersection(pParse,apSide[0],pBaseSide->pLine);
-    apBottom[1] = GetIntersection(pParse,apSide[1],pBaseSide->pLine);
-    printf("Intersection %s %s\n",apBottom[0]->zSymb,apBottom[1]->zSymb);
-    pBtmSeg = *GetLineSegAddr(apBottom[0],apBottom[1]);
-    pointDirect = GetLinesegDirect(pBtmSeg->pLine,apBottom[0],apBottom[1]);
-
-    tmp.pHead = (LinkNode*)pBtmSeg->pLine->pHead;
-    tmp.pLeft = (void*)apBottom[0];
-    tmp.pRight = (void*)apBottom[1];
-    pHead = pAngle->pVertex->pPlane->pHead;
-    p = GetLinkNode(pHead,pAngle->pLine1);
-    if( p==NULL ){
-        tmp.pIn = (void*)pAngle->pPoint1;
-        pos = GetLinkPos(&tmp,pointDirect);
-        InsertLinkPos(pAngle->pVertex,apSide,pAngle->pLine1,pos);
-        if(pointDirect==FORWARD_DIRECT){
-
-        }
-    }
-    p = GetLinkNode(pHead,pAngle->pLine2);
+    LineData *pBase;
+    pBase = (*GetLineSegAddr(pAngle->pPoint1,pAngle->pPoint2))->pLine;
+    InsertPlaneLine(pParse,pAngle->pVertex,pAngle->pPoint1,pBase);
+    InsertPlaneLine(pParse,pAngle->pVertex,pAngle->pPoint2,pBase);
+    PrintPlaneLine(pAngle->pVertex);
 }
+
+//void InsertPlaneAngle1(AstParse *pParse,GeomType *pAngle)
+//{
+//    PoinData *apBottom[2];
+//    LineData *apSide[2];
+//    LineSeg *pBaseSide;
+//    LineSeg *pBtmSeg;
+//    LinkNode *p;
+//    LinkNode *pHead;
+//    int pointDirect = 0;
+//    int pos;
+//    LinkTemp tmp;
+//
+//    pBaseSide = *GetLineSegAddr(pAngle->pPoint1,pAngle->pPoint2);
+//    p = pAngle->pVertex->pPlane->pHead->pNext;
+//    apSide[0] = (LineData *)p->pVal;
+//    p = p->pNext;
+//    apSide[1] = (LineData *)p->pVal;
+//    apBottom[0] = GetIntersection(pParse,apSide[0],pBaseSide->pLine);
+//    apBottom[1] = GetIntersection(pParse,apSide[1],pBaseSide->pLine);
+//    printf("Intersection %s %s\n",apBottom[0]->zSymb,apBottom[1]->zSymb);
+//    pBtmSeg = *GetLineSegAddr(apBottom[0],apBottom[1]);
+//    pointDirect = GetLinesegDirect(pBtmSeg->pLine,apBottom[0],apBottom[1]);
+//
+//    tmp.pHead = (LinkNode*)pBtmSeg->pLine->pHead;
+//    tmp.pLeft = (void*)apBottom[0];
+//    tmp.pRight = (void*)apBottom[1];
+//    pHead = pAngle->pVertex->pPlane->pHead;
+//    p = GetLinkNode(pHead,pAngle->pLine1);
+//    if( p==NULL ){
+//        tmp.pIn = (void*)pAngle->pPoint1;
+//        pos = GetLinkPos(&tmp,pointDirect);
+//        InsertLinkPos(pAngle->pVertex,apSide,pAngle->pLine1,pos);
+//        if(pointDirect==FORWARD_DIRECT){
+//
+//        }
+//    }
+//    p = GetLinkNode(pHead,pAngle->pLine2);
+//}
 
 PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle,TokenInfo *pVal)
 {
@@ -1185,13 +1224,13 @@ void SetSasEqual(SameAngle *pA,AngleTemp *pTemp)
     apSameSeg = SetPlaneHash(pParse,&ele1,&ele2);
     InsertSamePair(pParse,apSameSeg,&apSeg[0],&apSeg[1]);
 
-//    apSideSeg[0][0] = CreateNewLine(pParse,pTemp->apSide[0][0],pPoint1);
-//    apSideSeg[1][0] = CreateNewLine(pParse,pTemp->apSide[1][0],pPoint2);
-//    apPSeg[0][0] = GetAndSetAngle(pParse,pTemp->apSide[0][1],apSideSeg[0][0]);
-//    apPSeg[1][0] = GetAndSetAngle(pParse,pTemp->apSide[1][1],apSideSeg[1][0]);
-//    pAPair = SameAnglePair(pParse,apPSeg[0][0],apPSeg[1][0]);
-//    apPairSeg[0] = CreateNewLine(pParse,pTemp->apSide[0][1],pTemp->apSide[1][1]);
-//    InsertAnglePair(pParse,apPairSeg[0],pAPair);
+    apSideSeg[0][0] = CreateNewLine(pParse,pTemp->apSide[0][0],pPoint1);
+    apSideSeg[1][0] = CreateNewLine(pParse,pTemp->apSide[1][0],pPoint2);
+    apPSeg[0][0] = GetAndSetAngle(pParse,pTemp->apSide[0][1],apSideSeg[0][0]);
+    apPSeg[1][0] = GetAndSetAngle(pParse,pTemp->apSide[1][1],apSideSeg[1][0]);
+    pAPair = SameAnglePair(pParse,apPSeg[0][0],apPSeg[1][0]);
+    apPairSeg[0] = CreateNewLine(pParse,pTemp->apSide[0][1],pTemp->apSide[1][1]);
+    InsertAnglePair(pParse,apPairSeg[0],pAPair);
 }
 
 void CheckSAS(PlaneSeg *pPSeg,SameLine *pS,SameAngle *pA,AngleTemp *pTemp)
