@@ -1134,10 +1134,10 @@ void SetSasEqual(SameAngle *pA,AngleTemp *pTemp)
     AstParse *pParse = pTemp->pParse;
     GeomType ele1;
     GeomType ele2;
-    LineSeg* apPairSeg[2];
-    SameAngle *pAPair;
-    PlaneSeg *apPSeg[2][2];
-    LineSeg* apSideSeg[2][2];
+//    LineSeg* apPairSeg[2];
+//    SameAngle *pAPair;
+//    PlaneSeg *apPSeg[2][2];
+//    LineSeg* apSideSeg[2][2];
 
     pPoint1 = pA->pSeg1->pCorner->pVertex;
     pPoint2 = pA->pSeg2->pCorner->pVertex;
