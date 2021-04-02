@@ -195,6 +195,8 @@ void InsertSamePair(AstParse *pParse,PlaneSeg *pPSeg,
         LineSeg **ppSeg2);
 void CheckOtherPair(AstParse *pParse,SameLine *pPair);
 PlaneSeg *GetAndSetAngle(AstParse *pParse,PoinData *pVertex,LineSeg* pSeg);
-void InsertAnglePair(AstParse *pParse,LineSeg *pSeg,SameAngle *pPair);
+void InsertAnglePair(AstParse *pParse,LineSeg *pSeg,
+        PlaneSeg *pPSeg1,
+        PlaneSeg *pPSeg2);
 
 #endif /* GEOMETRY_H_ */
