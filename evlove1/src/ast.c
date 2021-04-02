@@ -37,6 +37,7 @@ void Free(void *p){
         }
     }
 #endif
+    //log_a("f");
     free(p);
     g_mem.free_cnt++;
 }

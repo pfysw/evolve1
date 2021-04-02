@@ -168,6 +168,7 @@ void PrintPlaneLine(PoinData *pVertex)
         PrintLine(p->pVal);
         p = p->pNext;
     }while(!p->isHead);
+    log_a("");
 
 }
 
@@ -826,7 +827,11 @@ PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle,TokenInfo *pVal)
         pSeg->pCorner = pCorner;
         if(pCorner->pVertex->pPlane!=NULL){
             pSeg->pPlane = pCorner->pVertex->pPlane;
-            Free(pSeg->pPlane);
+            //todo 现在pPlane还放在全局数组里未释放
+            //在这里释放后面会导致重复释放
+        }
+        else{
+            pCorner->pVertex->pPlane = pSeg->pPlane;
         }
     }
     return pSeg;
@@ -1125,13 +1130,13 @@ void SetSasEqual(SameAngle *pA,AngleTemp *pTemp)
     PoinData *pPoint1;
     PoinData *pPoint2;
     LineSeg* apSeg[2];
-    LineSeg* apPairSeg[2];
-    SameAngle *pAPair;
-    PlaneSeg *apPSeg[2][2];
     PlaneSeg *apSameSeg;
     AstParse *pParse = pTemp->pParse;
     GeomType ele1;
     GeomType ele2;
+    LineSeg* apPairSeg[2];
+    SameAngle *pAPair;
+    PlaneSeg *apPSeg[2][2];
     LineSeg* apSideSeg[2][2];
 
     pPoint1 = pA->pSeg1->pCorner->pVertex;
