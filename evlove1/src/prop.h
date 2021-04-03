@@ -22,6 +22,7 @@ typedef struct DebugFlag
 {
     u8 mpLeftDebug;
     u8 deduceDebug;
+    u8 freePrint;
 }DebugFlag;
 
 extern DebugFlag gDebug;

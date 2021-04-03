@@ -8,9 +8,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include "ast.h"
+#include "prop.h"
 #include <assert.h>
 #include "geometry.h"
 #include "triangle.h"
+
 
 
 PointHash *CreatPointHash(int nSlot)
@@ -65,7 +67,9 @@ void FreeLinePoint(AstParse *pParse,LinePoint *pHead)
 //     if(jj==4)
 //          printf("jj %d\n",jj);
 
-    log_c("line: ");
+    if(gDebug.freePrint){
+        log_c("line: ");
+    }
     while(1)
     {
         if(p->isHead){
@@ -74,13 +78,17 @@ void FreeLinePoint(AstParse *pParse,LinePoint *pHead)
             break;
         }
         else{
-            log_c("%s ",p->pPoint->zSymb);
+            if(gDebug.freePrint){
+                log_c("%s ",p->pPoint->zSymb);
+            }
             pTmp = p;
             p = p->pNext;
             Free(pTmp);
         }
     }
-    log_a("");
+    if(gDebug.freePrint){
+        log_a("");
+    }
 }
 
 void FreeLinkNode(LinkNode *pHead,int isFreeVal)
@@ -196,8 +204,10 @@ void FreeSamePair(LinkNode *pSame,int type)
             //printf("addr %p\n",p);
             if(p->isHead){
                 if(type==ELE_LINE){
-                    printf("head\n");
-                    PrintSameLine(p->pVal);
+                    if(gDebug.freePrint){
+                        printf("head\n");
+                        PrintSameLine(p->pVal);
+                    }
                 }
                 Free(p->pVal);
                 Free(p);
@@ -207,7 +217,9 @@ void FreeSamePair(LinkNode *pSame,int type)
                 pTmp = p;
                 p = p->pNext;
                 if(type==ELE_LINE){
-                    PrintSameLine(pTmp->pVal);
+                    if(gDebug.freePrint){
+                        PrintSameLine(pTmp->pVal);
+                    }
                 }
                 Free(pTmp->pVal);
                 Free(pTmp);
@@ -215,6 +227,7 @@ void FreeSamePair(LinkNode *pSame,int type)
         }
     }
 }
+
 void FreePlaneSeg(LineData *pArray)
 {
     int i = 0;
@@ -222,9 +235,11 @@ void FreePlaneSeg(LineData *pArray)
     {
         if(pArray->ppSeg[i]!= NULL){
             if(pArray->ppSeg[i]->pCorner!=NULL){
-                log_a("angle: %s%s%s",pArray->ppSeg[i]->pCorner->pLeft->zSymb,
-                        pArray->ppSeg[i]->pCorner->pVertex->zSymb,
-                        pArray->ppSeg[i]->pCorner->pRight->zSymb);
+                if(gDebug.freePrint){
+                    log_a("angle: %s%s%s",pArray->ppSeg[i]->pCorner->pLeft->zSymb,
+                            pArray->ppSeg[i]->pCorner->pVertex->zSymb,
+                            pArray->ppSeg[i]->pCorner->pRight->zSymb);
+                }
             }
             FreeSamePair(pArray->ppSeg[i]->pSame,ELE_LINE);
             if(pArray->ppSeg[i]->pCorner){
@@ -1410,7 +1425,7 @@ void SetEqualTrgl(AstParse *pParse,TempInfo *pTemp)
     apPSeg[0] = GetPlaneSeg(apSeg[2]->pLine,apSeg[1]->pLine);
 
     InsertAnglePair(pParse,apSeg[2],apPSeg[1],apPSeg[0]);
-    InsertAnglePair(pParse,apSeg[1],apPSeg[1],apPSeg[0]);
+    InsertAnglePair(pParse,apSeg[1],apPSeg[2],apPSeg[0]);
 }
 
 void SetSameSeg(AstParse *pParse,PlaneSeg *pPSeg,GeomType *pLeft,GeomType *pRight)

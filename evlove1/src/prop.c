@@ -24,7 +24,8 @@ typedef struct PermData
 
 DebugFlag gDebug = {
         .mpLeftDebug = 0,
-        .deduceDebug = 0
+        .deduceDebug = 0,
+        .freePrint = 0
 };
 
 u8 isEqualNode(TokenInfo *pA,TokenInfo *pB)
