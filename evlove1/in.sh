@@ -1,3 +1,10 @@
+//A->(B-C);
+(B-O1)-C;
+(A-O2)-C;
+(A-O3)-B;
+(A-G)-O1;
+(A-O3) = (O3-B);
+end;
 ((exist B)->(A-C))val 60;
 (B-C)-(exist D);
 (B-A)-(exist E);
@@ -8,9 +15,3 @@
 (B-F) = (B-E);
 (B-A) = (B-C);
 end;
-exist E right (B-A);
-condition;
-(((A-B)-C && (D-E)-F) && (A-B)=(D-E) && (B-C)=(D-F))->(A-C)=(C-F)
-theorem;
-exist F right (B-D);
-(D-F) = (A-B);

@@ -684,7 +684,7 @@ GeomType GetAngleEle(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
     ele.pLine2 = ele2.pLine1;
     ele.pPoint1 = pRight->pPoint1;
     ele.pPoint2 = pRight->pPoint2;
-
+    SetAngleHash(pParse,&ele);
     return ele;
 }
 
@@ -821,7 +821,7 @@ void InsertPlaneAngle(AstParse *pParse,GeomType *pAngle)
     PrintPlaneLine(pAngle->pVertex);
 }
 
-PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle,TokenInfo *pVal)
+PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle)
 {
     PlaneSeg *pSeg;
     GeomType ele1;
@@ -845,14 +845,12 @@ PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle,TokenInfo *pVal)
         pCorner->pVertex = pAngle->pVertex;
         pCorner->pLeft = pAngle->pPoint1;
         pCorner->pRight = pAngle->pPoint2;
-        if(pVal!=NULL){
-            pCorner->val = atoi(pVal->zSymb);
-        }
         pCorner->pLine1 = pAngle->pLine1;
         pCorner->pLine2 = pAngle->pLine2;
         pCorner->bl = bl;
         pCorner->br = br;
         pSeg->pCorner = pCorner;
+        pAngle->pCorner = pCorner;
         if(pCorner->pVertex->pPlane!=NULL){
             pSeg->pPlane = pCorner->pVertex->pPlane;
             //todo 现在pPlane还放在全局数组里未释放
@@ -903,32 +901,28 @@ void TrglPointTemp(TempInfo *pTemp,PoinData *p1,PoinData *p2,PoinData *p3)
 int HavePubPoint(LineSeg *pIn1,LineSeg *pIn2,TempInfo *pTemp)
 {
     int rc = 0;
-    if(pIn1->pLeft==pIn2->pLeft){
-        pTemp->a = GetLinesegDirect(pIn1->pLine,pIn1->pLeft,pIn1->pRight);
-        pTemp->b = GetLinesegDirect(pIn2->pLine,pIn2->pLeft,pIn2->pRight);
-        TrglPointTemp(pTemp,pIn1->pLeft,pIn1->pRight,pIn2->pRight);
-        rc = 1;
+    PoinData *apPoint[2][2];
+    int i,j;
+
+    apPoint[0][0] = pIn1->pLeft;
+    apPoint[0][1] = pIn1->pRight;
+    apPoint[1][0] = pIn2->pLeft;
+    apPoint[1][1] = pIn2->pRight;
+    for(i=0;i<2;i++){
+        for(j=0;j<2;j++)
+        {
+            if(apPoint[0][i]==apPoint[1][j]){
+                pTemp->a = GetLinesegDirect(pIn1->pLine,apPoint[0][i],apPoint[0][1-i]);
+                pTemp->b = GetLinesegDirect(pIn2->pLine,apPoint[1][j],apPoint[1][1-j]);
+                TrglPointTemp(pTemp,apPoint[0][i],apPoint[0][1-i],apPoint[1][1-j]);
+                rc = 1;
+            }
+        }
     }
-    else if(pIn1->pLeft==pIn2->pRight){
-        pTemp->a = GetLinesegDirect(pIn1->pLine,pIn1->pLeft,pIn1->pRight);
-        pTemp->b = GetLinesegDirect(pIn2->pLine,pIn2->pRight,pIn2->pLeft);
-        TrglPointTemp(pTemp,pIn1->pLeft,pIn1->pRight,pIn2->pLeft);
-        rc = 1;
-    }
-    else if(pIn1->pRight==pIn2->pLeft){
-        pTemp->a = GetLinesegDirect(pIn1->pLine,pIn1->pRight,pIn1->pLeft);
-        pTemp->b = GetLinesegDirect(pIn2->pLine,pIn2->pLeft,pIn2->pRight);
-        TrglPointTemp(pTemp,pIn1->pLeft,pIn1->pRight,pIn2->pRight);
-        rc = 1;
-    }
-    else if(pIn1->pRight==pIn2->pRight){
-        pTemp->a = GetLinesegDirect(pIn1->pLine,pIn1->pRight,pIn1->pLeft);
-        pTemp->b = GetLinesegDirect(pIn2->pLine,pIn2->pRight,pIn2->pLeft);
-        TrglPointTemp(pTemp,pIn1->pLeft,pIn1->pRight,pIn2->pLeft);
-        rc = 1;
-    }
+
     return rc;
 }
+
 
 void CheckNewSame(AstParse *pParse,LinkNode *pSame,SameLine *pIn)
 {
@@ -1012,6 +1006,7 @@ SameLine *SetSamePair(AstParse *pParse,LineSeg **ppSeg1,LineSeg **ppSeg2)
     pPair = (SameLine *)Malloc(sizeof(SameLine));
     iNum1 =  (*ppSeg1)->pLine->iNum;
     iNum2 =  (*ppSeg2)->pLine->iNum;
+    //判断后可以保证GetSegDirect输入的线段在同一条直线上
     if(iNum1<iNum2){
         pPair->pSeg1 = *ppSeg1;
         pPair->pSeg2 = *ppSeg2;
@@ -1404,7 +1399,7 @@ PlaneSeg *GetAndSetAngle(AstParse *pParse,PoinData *pVertex,LineSeg* pSeg)
     ele2.pPoint1 = pSeg->pLeft;
     ele2.pPoint2 = pSeg->pRight;
     ele = GetAngleEle(pParse,&ele1,&ele2);
-    pPSeg = SetAngleHash(pParse,&ele,NULL);
+    pPSeg = SetAngleHash(pParse,&ele);
     return pPSeg;
 }
 
@@ -1431,11 +1426,11 @@ void SetEqualTrgl(AstParse *pParse,TempInfo *pTemp)
 void SetSameSeg(AstParse *pParse,PlaneSeg *pPSeg,GeomType *pLeft,GeomType *pRight)
 {
     TempInfo tmp;
-    PlaneSeg* pSeg;
     CornerInfo *pCorner;
     int val;//角度
     LineSeg **ppSeg1;
     LineSeg **ppSeg2;
+    LineSeg *pSeg;
 
     ppSeg1 = GetLineSegAddr(pLeft->pPoint1,pLeft->pPoint2);
     ppSeg2 = GetLineSegAddr(pRight->pPoint1,pRight->pPoint2);
@@ -1443,23 +1438,34 @@ void SetSameSeg(AstParse *pParse,PlaneSeg *pPSeg,GeomType *pLeft,GeomType *pRigh
     InsertSamePair(pParse,pPSeg,ppSeg1,ppSeg2);
     if(HavePubPoint(*ppSeg1,*ppSeg2,&tmp)){
         //tmp.apPoint[0]是顶点
-        pSeg = GetPlaneSeg((*ppSeg1)->pLine,(*ppSeg2)->pLine);
-        pCorner = pSeg->pCorner;
-        if(pCorner->pLine1!=(*ppSeg1)->pLine){
-            SwapTemp(&tmp);
+        if((*ppSeg1)->pLine==(*ppSeg2)->pLine){
+            pSeg = *GetLineSegAddr(tmp.apPoint[1],tmp.apPoint[2]);
+            assert(pSeg->pMid==NULL);
+            pSeg->pMid = tmp.apPoint[0];
         }
-        val = pCorner->val;
-        assert(val<=180);
-        if(tmp.a!=pCorner->bl){
-            val = 180-val;
+        else{
+            if(pPSeg->pCorner==NULL){
+                assert(0); //未测试
+                pSeg = *GetLineSegAddr(tmp.apPoint[1],tmp.apPoint[2]);
+                pPSeg = GetAndSetAngle(pParse,tmp.apPoint[0],pSeg);
+            }
+            pCorner = pPSeg->pCorner;
+            if(pCorner->pLine1!=(*ppSeg1)->pLine){
+                SwapTemp(&tmp);
+            }
+            val = pCorner->val;
+            assert(val<=180);
+            if(tmp.a!=pCorner->bl){
+                val = 180-val;
+            }
+            if(tmp.b!=pCorner->br){
+                val = 180-val;
+            }
+            if(val==DEG_60){
+                SetEqualTrgl(pParse,&tmp);
+            }
+            //printf("corner %d\n",val);
         }
-        if(tmp.b!=pCorner->br){
-            val = 180-val;
-        }
-        if(val==DEG_60){
-            SetEqualTrgl(pParse,&tmp);
-        }
-        //printf("corner %d\n",val);
     }
 }
 
@@ -1568,7 +1574,8 @@ GeomType SetGeomHash(AstParse *pParse,TokenInfo *pAst)
 
         }
         else if(ele1.type==ELE_ANGLE){
-            SetAngleHash(pParse,&ele1,pAst->pRight);
+            ele1.pCorner->val = atoi(pAst->pRight->zSymb);
+            //SetAngleHash(pParse,&ele1,pAst->pRight);
         }
     }
     else

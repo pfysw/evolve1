@@ -107,6 +107,7 @@ struct LineSeg
     u8 isHead;
     PoinData *pLeft;
     PoinData *pRight;
+    PoinData *pMid;
     LinkNode *pSame;//2个端点上还有的相等的角
     LinkNode *pTriag;
     LinkNode *pTriSame;//全等三角形
@@ -177,6 +178,7 @@ struct GeomType
     PoinData *pPoint1;
     PoinData *pPoint2;
     PoinData *pVertex;
+    CornerInfo *pCorner;
 };
 
 
@@ -202,5 +204,6 @@ LinkNode *NewLinkHead(void *pVal,int size);
 int InsertCommonPair(AstParse *pParse,LinkNode **ppSame,
         void *pSeg1,
         void *pSeg2);
+PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle);
 
 #endif /* GEOMETRY_H_ */
