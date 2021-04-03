@@ -42,16 +42,6 @@ struct LinkNode
     u8 isHead;
 };
 
-typedef struct LinkTemp LinkTemp;
-struct LinkTemp
-{
-    LinkNode *pHead;
-    void *pLeft;
-    void *pRight;
-    void *pIn;
-};
-
-
 typedef struct PlaneData PlaneData;
 struct PlaneData
 {
@@ -118,6 +108,8 @@ struct LineSeg
     PoinData *pLeft;
     PoinData *pRight;
     LinkNode *pSame;//2个端点上还有的相等的角
+    LinkNode *pTriag;
+    LinkNode *pTriSame;//全等三角形
 };
 
 typedef struct SameLine SameLine;
@@ -132,6 +124,13 @@ struct SameAngle
 {
     PlaneSeg *pSeg1;
     PlaneSeg *pSeg2;
+};
+
+typedef struct CommanPair CommanPair;
+struct CommanPair
+{
+    void *pSeg1;
+    void *pSeg2;
 };
 
 struct PoinData
@@ -198,5 +197,10 @@ PlaneSeg *GetAndSetAngle(AstParse *pParse,PoinData *pVertex,LineSeg* pSeg);
 void InsertAnglePair(AstParse *pParse,LineSeg *pSeg,
         PlaneSeg *pPSeg1,
         PlaneSeg *pPSeg2);
+void InsertLinkNode(AstParse *pParse,LinkNode *pPre,void *pVal);
+LinkNode *NewLinkHead(void *pVal,int size);
+int InsertCommonPair(AstParse *pParse,LinkNode **ppSame,
+        void *pSeg1,
+        void *pSeg2);
 
 #endif /* GEOMETRY_H_ */
