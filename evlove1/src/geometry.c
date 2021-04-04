@@ -179,6 +179,17 @@ void PrintLine(LineData *pLine)
     log_c(" ");
 }
 
+void PrintParall(CornerInfo *pCorner){
+    LineSeg* apSeg[2];
+    apSeg[0] = *GetLineSegAddr(pCorner->pLeft,pCorner->pVertex);
+    apSeg[1] = *GetLineSegAddr(pCorner->pRight,pCorner->pVertex);
+    log_c("parallel:");
+    PrintLine(apSeg[0]->pLine);
+    log_c("//");
+    PrintLine(apSeg[1]->pLine);
+    log_c("\n");
+}
+
 void PrintPlaneLine(PoinData *pVertex)
 {
     PlaneData *pPlane = pVertex->pPlane;
@@ -231,14 +242,20 @@ void FreeSamePair(LinkNode *pSame,int type)
 void FreePlaneSeg(LineData *pArray)
 {
     int i = 0;
+    CornerInfo *pCorner;
+
     for(i=0;i<pArray->iNum+1;i++)
     {
         if(pArray->ppSeg[i]!= NULL){
             if(pArray->ppSeg[i]->pCorner!=NULL){
                 if(gDebug.freePrint){
-                    log_a("angle: %s%s%s",pArray->ppSeg[i]->pCorner->pLeft->zSymb,
-                            pArray->ppSeg[i]->pCorner->pVertex->zSymb,
-                            pArray->ppSeg[i]->pCorner->pRight->zSymb);
+                    pCorner = pArray->ppSeg[i]->pCorner;
+                    if(!pCorner->pVertex->isInf){
+                        log_a("angle: %s%s%s",pCorner->pLeft->zSymb,
+                                pCorner->pVertex->zSymb,
+                                pCorner->pRight->zSymb);
+                    }
+
                 }
             }
             FreeSamePair(pArray->ppSeg[i]->pSame,ELE_LINE);
@@ -445,7 +462,6 @@ LineSeg *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight)
 {
     LineData *pNew;
     LineSeg *pSeg;
-    PoinData *pInf;
     LineHash *pLineSet = pParse->pLineSet;
     pNew = (LineData*)Malloc(sizeof(LineData));
     memset(pNew,0,sizeof(LineData));
@@ -459,9 +475,7 @@ LineSeg *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight)
     }
     pLineSet->ppLine[pNew->iNum] = pNew;
     pLineSet->nLine++;
-   // pNew->pHead = NewPointHead(NULL);
-    pInf = NewPointObj(pParse);
-    pNew->pHead = NewPointHead(pInf);
+    pNew->pHead = NewPointHead(NULL);
     //两条相同的直线也组成一个seg
     pNew->ppSeg = (PlaneSeg **)Malloc(sizeof(PlaneSeg *)*(pNew->iNum+1));
     memset(pNew->ppSeg,0,sizeof(PlaneSeg *)*(pNew->iNum+1));
@@ -577,12 +591,14 @@ void SetLineSegPoint(AstParse *pParse,
     LinePoint *pLoc;
     *ppLs1 = (LineSeg*)NewLinkHead(pLineSeg->pLine1,sizeof(LineSeg));
     *ppLs2 = (LineSeg*)NewLinkHead(pLineSeg->pLine1,sizeof(LineSeg));
-    pLoc = FindPointLoc(pLineSeg->pLine1->pHead,pLineSeg->pPoint2);
+
     if(bInsertPre){
-        InsertPointNode(pParse,pLoc->pPre,pLineSeg->pPoint1);
+        pLoc = FindPointLoc(pLineSeg->pLine1->pHead,pLineSeg->pPoint1);
+        InsertPointNode(pParse,pLoc->pPre,pLink->pPoint1);
     }
     else{
         //pRight->pPoint1插入到pLeft->pLine1后面
+        pLoc = FindPointLoc(pLineSeg->pLine1->pHead,pLineSeg->pPoint2);
         InsertPointNode(pParse,pLoc,pLink->pPoint1);
     }
     SetSegPoint(*ppLs1,pLink->pPoint1,pLineSeg->pPoint1);
@@ -684,7 +700,6 @@ GeomType GetAngleEle(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
     ele.pLine2 = ele2.pLine1;
     ele.pPoint1 = pRight->pPoint1;
     ele.pPoint2 = pRight->pPoint2;
-    SetAngleHash(pParse,&ele);
     return ele;
 }
 
@@ -781,7 +796,7 @@ void InsertPlaneLine(
     }
 
     pNode = (LinePoint *)GetLinkNode((LinkNode *)(pBase->pHead),(void*)pPoint);
-    if(pNode)
+
     for(p=pNode->pNext;;p=p->pNext){
         assert(p!=pNode);
         pRSeg = *GetLineSegAddr(p->pPoint,pVertex);
@@ -801,7 +816,7 @@ void InsertPlaneLine(
             }
         }
     }
-
+    assert(pRSeg!=pLSeg);
     pLineNode = GetLinkNode(pVertex->pPlane->pHead,pLSeg->pLine);
     if(pLineNode->pNext->pVal==pRSeg->pLine){
         InsertLinkNode(pParse,pLineNode,pLine);
@@ -1403,6 +1418,7 @@ PlaneSeg *GetAndSetAngle(AstParse *pParse,PoinData *pVertex,LineSeg* pSeg)
     return pPSeg;
 }
 
+
 void SetEqualTrgl(AstParse *pParse,TempInfo *pTemp)
 {
     LineSeg* apSeg[3];
@@ -1466,6 +1482,64 @@ void SetSameSeg(AstParse *pParse,PlaneSeg *pPSeg,GeomType *pLeft,GeomType *pRigh
             }
             //printf("corner %d\n",val);
         }
+    }
+}
+
+void InsertInfnite(AstParse *pParse,PoinData *pPoint,LineSeg* pSeg)
+{
+    LineSeg** ppLs1;
+    LineSeg** ppLs2;
+
+    ppLs1 = GetLineSegAddr(pPoint,pSeg->pLeft);
+    ppLs2 = GetLineSegAddr(pPoint,pSeg->pRight);
+    assert(*ppLs1==NULL);
+    assert(*ppLs2==NULL);
+    *ppLs1 = (LineSeg*)NewLinkHead(pSeg->pLine,sizeof(LineSeg));
+    *ppLs2 = (LineSeg*)NewLinkHead(pSeg->pLine,sizeof(LineSeg));
+    SetSegPoint(*ppLs1,pPoint,pSeg->pLeft);
+    SetSegPoint(*ppLs2,pPoint,pSeg->pRight);
+    CheckNewSeg(pParse,pPoint,(*ppLs1)->pLine);
+}
+
+void SetParallel(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
+{
+    LinePoint *apHead[2];
+    PoinData *pInf;
+    LineSeg* apSide[2];
+    GeomType ele;
+    PlaneSeg *pPSeg;
+    int bl;
+    int br;
+
+    apHead[0] = pLeft->pLine1->pHead;
+    apHead[1] = pRight->pLine1->pHead;
+    apSide[0] = *GetLineSegAddr(pLeft->pPoint1,pLeft->pPoint2);
+    apSide[1] = *GetLineSegAddr(pRight->pPoint1,pRight->pPoint2);
+    bl = GetLinesegDirect(pLeft->pLine1,pLeft->pPoint1,pLeft->pPoint2);
+    br = GetLinesegDirect(pRight->pLine1,pRight->pPoint1,pRight->pPoint2);
+    assert(bl==br);
+    if(apHead[0]->pPoint==NULL&&apHead[1]->pPoint==NULL){
+        pInf = NewPointObj(pParse);
+        pInf->zSymb = Malloc(10);
+        sprintf(pInf->zSymb,"_%d_",pInf->iNum);
+        pInf->isInf = 1;
+        apHead[0]->pPoint = pInf;
+        apHead[1]->pPoint = pInf;
+        InsertInfnite(pParse,pInf,apSide[0]);
+        InsertInfnite(pParse,pInf,apSide[1]);
+
+        ele.type = ELE_ANGLE;
+        ele.pVertex = pInf;
+        ele.pLine1 = apSide[0]->pLine;
+        ele.pLine2 = apSide[1]->pLine;
+        ele.pPoint1 = pLeft->pPoint1;
+        ele.pPoint2 = pRight->pPoint1;
+        pPSeg = SetAngleHash(pParse,&ele);
+        PrintParall(pPSeg->pCorner);
+    }
+    else{
+        assert(0);
+        //InsertPlaneLine
     }
 }
 
@@ -1563,10 +1637,15 @@ GeomType SetGeomHash(AstParse *pParse,TokenInfo *pAst)
                 break;
             case OP_IMPL:
                 ele = GetAngleEle(pParse,&ele1,&ele2);
+                SetAngleHash(pParse,&ele);
                 break;
             case OP_EQUAL:
                 pSeg = SetPlaneHash(pParse,&ele1,&ele2);
                 SetSameSeg(pParse,pSeg,&ele1,&ele2);
+                break;
+            case OP_PARALLEL:
+                SetParallel(pParse,&ele1,&ele2);
+                //log_a("parallel");
                 break;
             default:
                 break;

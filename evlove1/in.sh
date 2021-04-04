@@ -1,9 +1,13 @@
-//A->(B-C);
+A->(B-C);
 (B-O1)-C;
 (A-O2)-C;
 (A-O3)-B;
 (A-G)-O1;
 (A-O3) = (O3-B);
+(A-O2) = (O2-C);
+(B-O1) = (O1-C);
+(B-D) || (O3-C);
+(A-O1)-D;
 end;
 ((exist B)->(A-C))val 60;
 (B-C)-(exist D);

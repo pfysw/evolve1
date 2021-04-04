@@ -27,6 +27,7 @@ typedef unsigned short u16;
 #define OP_ADD 3
 #define OP_LINE 4
 #define OP_EQUAL 5
+#define OP_PARALLEL 6
 
 #define log_a(format,...)   printf(format"\n",## __VA_ARGS__)
 #define log_c(format,...)   printf(format,## __VA_ARGS__)

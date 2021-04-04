@@ -17,6 +17,7 @@ val  { return TK_IMPL; }
 ->    { return TK_IMPL; }
 =    { return TK_IMPL; }
 -    { return TK_IMPL; }
+"||"   { return TK_IMPL; }
 >>    { return TK_IMPL; }
 \+    { return TK_IMPL; }
 ">"    { return TK_IMPL; }

@@ -141,6 +141,7 @@ struct PoinData
     char *zSymb;
     LineSeg **ppSeg;
     PlaneData *pPlane;
+    u8 isInf;
 };
 
 typedef struct PointHash PointHash;
@@ -205,5 +206,6 @@ int InsertCommonPair(AstParse *pParse,LinkNode **ppSame,
         void *pSeg1,
         void *pSeg2);
 PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle);
+LineSeg** GetLineSegAddr(PoinData *pLeft,PoinData *pRight);
 
 #endif /* GEOMETRY_H_ */

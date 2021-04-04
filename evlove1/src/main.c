@@ -13,7 +13,6 @@
 #include "geometry.h"
 
 
-extern Vector theoremset;
 
 void* PropParseAlloc(void* (*allocProc)(size_t));
 void* PropParse(void*, int, TokenInfo*,AstParse *pParse);
