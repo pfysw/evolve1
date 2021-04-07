@@ -318,6 +318,7 @@ PoinData *NewPointObj(AstParse *pParse)
     pPoint = (PoinData *)Malloc(sizeof(PoinData));
     memset(pPoint,0,sizeof(PoinData));
     pPoint->iNum = pSet->nPoint++;
+    pPoint->pParse = pParse;
     pSet->ppArray[pPoint->iNum] = pPoint;
     pPoint->ppSeg = (LineSeg**)Malloc(sizeof(LineSeg*)*(pPoint->iNum+1));
     memset(pPoint->ppSeg, 0, sizeof(LineSeg*)*(pPoint->iNum+1));
@@ -448,9 +449,8 @@ void FreeLine(AstParse *pParse,LineData *pLine)
     LineHash *pLineSet = pParse->pLineSet;
     pLineSet->ppLine[pLine->iNum] = NULL;
     //pLineSet->nLine--;//todo 有些线条在中途被释放了怎么办
-    FreeLinePoint(pParse,pLine->pHead);
+    //FreeLinePoint(pParse,pLine->pHead);//只释放公共点，其他点链接到新直线上
     FreePlaneSeg(pLine);
-   // Free(pLine->ppSeg);
     Free(pLine);
 }
 
@@ -458,7 +458,7 @@ void CheckGenTwoPoint(LineData *pLine1,LineData *pLine2)
 {
     LinePoint *p1;
     LinePoint *p2;
-    PoinData *aRecoard[5];
+    //PoinData *aRecoard[5];
     int nInterSection = 0;
     printf("--1--\n");
     TravLinePoint(pLine1);
@@ -473,7 +473,7 @@ void CheckGenTwoPoint(LineData *pLine1,LineData *pLine2)
             assert(p2->pPoint!=NULL);
           //  if(p2->pPoint==NULL) continue;
             if(p1->pPoint==p2->pPoint){
-                aRecoard[nInterSection] = p1->pPoint;
+                //aRecoard[nInterSection] = p1->pPoint;
                 nInterSection++;
             }
         }
@@ -484,6 +484,76 @@ void CheckGenTwoPoint(LineData *pLine1,LineData *pLine2)
         }
     }
     assert(nInterSection<2);
+}
+
+PoinData *GetIntersection(LineData *pLine1,LineData *pLine2)
+{
+    LinePoint *p1,*p2;
+    PoinData *pPoint = NULL;
+    for(p1=pLine1->pHead->pNext;!p1->isHead;p1=p1->pNext)
+    {
+        for(p2=pLine2->pHead->pNext;!p2->isHead;p2=p2->pNext)
+        {
+            if(p1->pPoint==p2->pPoint){
+                pPoint = p1->pPoint;
+                break;
+            }
+        }
+    }
+    return pPoint;
+}
+
+void MergeTwoLinePoint(LineData *pLine1,LineData *pLine2,PoinData *pRigth)
+{
+    LinePoint *p1;
+    LinePoint *p2;
+    LinePoint *p;
+    AstParse *pParse;
+    PoinData *pInter;
+
+    CheckGenTwoPoint(pLine1,pLine2);
+    pInter = GetIntersection(pLine1,pLine2);
+    assert(pInter!=NULL);
+    pParse = pInter->pParse;
+    p1 = (LinePoint *)GetLinkNode((LinkNode*)pLine1->pHead,pInter);
+    p2 = (LinePoint *)GetLinkNode((LinkNode*)pLine2->pHead,pInter);
+    assert(!pLine1->pHead->pNext->isHead);
+    assert(!pLine2->pHead->pNext->isHead);
+    //pLine2头部接在p1前
+    if(pLine2->pHead->pNext!=p2){
+        for(p=pLine2->pHead->pNext;p!=p2;p=p->pNext){
+            CheckNewSeg(pParse,p->pPoint,pLine1);
+        }
+        p1->pPre->pNext = pLine2->pHead->pNext;
+        pLine2->pHead->pNext->pPre = p1->pPre;
+        p1->pPre = p2->pPre;
+        p2->pPre->pNext = p1;
+    }
+    //pLine2尾部接在p1后
+    if(pLine2->pHead->pPre!=p2){
+        for(p=p2->pNext;!p->isHead;p=p->pNext){
+            CheckNewSeg(pParse,p->pPoint,pLine1);
+        }
+        if(pRigth){
+            p1 = (LinePoint *)GetLinkNode((LinkNode*)pLine1->pHead,pRigth);
+        }
+        p1->pNext->pPre = pLine2->pHead->pPre;
+        pLine2->pHead->pPre->pNext = p1->pNext;
+        p1->pNext = p2->pNext;
+        p2->pNext->pPre = p1;
+    }
+    if(pLine2->pHead->pPoint!=NULL){
+        assert(pLine1->pHead->pPoint==NULL);
+        pLine1->pHead->pPoint = pLine2->pHead->pPoint;
+    }
+    Free(pLine2->pHead);
+    Free(p2);
+    FreeLine(pParse,pLine2);
+    printf("--r--\n");
+    TravLinePoint(pLine1);
+//    printf("pR %s\n",pRigth->zSymb);
+//    printf("p1 %s\n",p1->pPoint->zSymb);
+//    printf("p1 next %s\n",p1->pNext->pPoint->zSymb);
 }
 
 void ResetLine(AstParse *pParse,GeomType *pDst,LineData *pLine)
@@ -562,26 +632,32 @@ GeomType GetLineEle(LineData *p)
     return ele;
 }
 
+//void SetSegPoint(LineSeg *pSeg,PoinData *pLeft,PoinData *pRight)
+//{
+//    LineData *pLine = pSeg->pLine;
+//    LinePoint *p;
+//    p = pLine->pHead->pNext;
+//    while(!p->isHead){
+//        if(p->pPoint==pLeft){
+//            pSeg->pLeft = pLeft;
+//            pSeg->pRight = pRight;
+//            break;
+//        }
+//        else if(p->pPoint==pRight){
+//            pSeg->pLeft = pRight;
+//            pSeg->pRight = pLeft;
+//            break;
+//        }
+//        else{
+//            p = p->pNext;
+//        }
+//    }
+//}
+
 void SetSegPoint(LineSeg *pSeg,PoinData *pLeft,PoinData *pRight)
 {
-    LineData *pLine = pSeg->pLine;
-    LinePoint *p;
-    p = pLine->pHead->pNext;
-    while(!p->isHead){
-        if(p->pPoint==pLeft){
-            pSeg->pLeft = pLeft;
-            pSeg->pRight = pRight;
-            break;
-        }
-        else if(p->pPoint==pRight){
-            pSeg->pLeft = pRight;
-            pSeg->pRight = pLeft;
-            break;
-        }
-        else{
-            p = p->pNext;
-        }
-    }
+    pSeg->pLeft = pLeft;
+    pSeg->pRight = pRight;
 }
 
 //如果已经创建了则直接返回
@@ -623,28 +699,53 @@ LineSeg *CreateNewLine(AstParse *pParse,PoinData *pPoint1,PoinData *pPoint2)
     return pSeg;
 }
 
-void SetLineSegPoint(AstParse *pParse,
-                     LineSeg** ppLs1,
-                     LineSeg** ppLs2,
-                     GeomType *pLineSeg,//被插入的线段
-                     GeomType *pLink,//要插入的点
+//void SetLineSegPoint(AstParse *pParse,
+//                     LineSeg** ppLs1,
+//                     LineSeg** ppLs2,
+//                     GeomType *pLineSeg,//被插入的线段
+//                     GeomType *pLink,//要插入的点
+//                     u8 bInsertPre)
+//{
+//    LinePoint *pLoc;
+//    *ppLs1 = (LineSeg*)NewLinkHead(pLineSeg->pLine1,sizeof(LineSeg));
+//    *ppLs2 = (LineSeg*)NewLinkHead(pLineSeg->pLine1,sizeof(LineSeg));
+//
+//    if(bInsertPre){
+//        pLoc = FindPointLoc(pLineSeg->pLine1->pHead,pLineSeg->pPoint1);
+//        InsertPointNode(pParse,pLoc->pPre,pLink->pPoint1);
+//    }
+//    else{
+//        //pRight->pPoint1插入到pLeft->pLine1后面
+//        pLoc = FindPointLoc(pLineSeg->pLine1->pHead,pLineSeg->pPoint2);
+//        InsertPointNode(pParse,pLoc,pLink->pPoint1);
+//    }
+//    SetSegPoint(*ppLs1,pLink->pPoint1,pLineSeg->pPoint1);
+//    SetSegPoint(*ppLs2,pLink->pPoint1,pLineSeg->pPoint2);
+//}
+
+void InsertSegPoint(AstParse *pParse,
+                     LineSeg *pLineSeg,//被插入的线段
+                     PoinData *pInsert,
                      u8 bInsertPre)
 {
     LinePoint *pLoc;
-    *ppLs1 = (LineSeg*)NewLinkHead(pLineSeg->pLine1,sizeof(LineSeg));
-    *ppLs2 = (LineSeg*)NewLinkHead(pLineSeg->pLine1,sizeof(LineSeg));
-
     if(bInsertPre){
-        pLoc = FindPointLoc(pLineSeg->pLine1->pHead,pLineSeg->pPoint1);
-        InsertPointNode(pParse,pLoc->pPre,pLink->pPoint1);
+        pLoc = FindPointLoc(pLineSeg->pLine->pHead,pLineSeg->pLeft);
+        InsertPointNode(pParse,pLoc->pPre,pInsert);
     }
     else{
         //pRight->pPoint1插入到pLeft->pLine1后面
-        pLoc = FindPointLoc(pLineSeg->pLine1->pHead,pLineSeg->pPoint2);
-        InsertPointNode(pParse,pLoc,pLink->pPoint1);
+        pLoc = FindPointLoc(pLineSeg->pLine->pHead,pLineSeg->pRight);
+        InsertPointNode(pParse,pLoc,pInsert);
     }
-    SetSegPoint(*ppLs1,pLink->pPoint1,pLineSeg->pPoint1);
-    SetSegPoint(*ppLs2,pLink->pPoint1,pLineSeg->pPoint2);
+}
+
+LineSeg *SetLineSegPoint(LineSeg *pLineSeg,PoinData *pLeft,PoinData *pRight)
+{
+    LineSeg* pSeg;
+    pSeg = (LineSeg*)NewLinkHead(pLineSeg->pLine,sizeof(LineSeg));
+    SetSegPoint(pSeg,pLeft,pRight);
+    return pSeg;
 }
 
 void CheckNewSeg(AstParse *pParse,PoinData *pNew,LineData *pLine)
@@ -659,6 +760,10 @@ void CheckNewSeg(AstParse *pParse,PoinData *pNew,LineData *pLine)
             *ppLSeg = (LineSeg*)NewLinkHead(pLine,sizeof(LineSeg));
             SetSegPoint(*ppLSeg,pNew,p->pPoint);
         }
+        else
+        {
+            (*ppLSeg)->pLine = pLine;
+        }
         p = p->pNext;
     }
 }
@@ -668,11 +773,10 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
 {
     GeomType ele = {0};
     LineData *pLine;
-    LinePoint *pLoc;
     LineSeg** ppLs1;
     LineSeg** ppLs2;
     LineSeg *pSeg;
-    PoinData *pNew;
+    LinePoint *pPub;
 
     if(pLeft->type==ELE_POINT && pRight->type==ELE_POINT)
     {
@@ -688,39 +792,72 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
     {
         assert(0);//未测试
         assert(pRight->type==ELE_LINE);
-        ppLs1 = GetLineSegAddr(pLeft->pPoint1,pRight->pPoint1);
-        ppLs2 = GetLineSegAddr(pLeft->pPoint1,pRight->pPoint2);
-        assert(*ppLs1==NULL);
-        assert(*ppLs2==NULL);
-        SetLineSegPoint(pParse,ppLs1,ppLs2,pRight,pLeft,1);
-        pNew = pLeft->pPoint1;
-        CheckNewSeg(pParse,pNew,(*ppLs1)->pLine);
+//        ppLs1 = GetLineSegAddr(pLeft->pPoint1,pRight->pPoint1);
+//        ppLs2 = GetLineSegAddr(pLeft->pPoint1,pRight->pPoint2);
+//        assert(*ppLs1==NULL);
+//        assert(*ppLs2==NULL);
+//        SetLineSegPoint(pParse,ppLs1,ppLs2,pRight,pLeft,1);
+//        CheckNewSeg(pParse,pLeft->pPoint1,(*ppLs1)->pLine);
     }
     else if(pLeft->type==ELE_LINE)
     {
         ppLs1 = GetLineSegAddr(pRight->pPoint1,pLeft->pPoint1);
         ppLs2 = GetLineSegAddr(pRight->pPoint1,pLeft->pPoint2);
+
+#if 0
         if(*ppLs1!=NULL || *ppLs2!=NULL){
-            if(*ppLs2!=NULL){
-                CheckGenTwoPoint(pLeft->pLine1,(*ppLs2)->pLine);
-                FreeLine(pParse,(*ppLs2)->pLine);
-                Free(*ppLs2);
-                *ppLs2 = NULL;
+            if(*ppLs1!=NULL){
+                MergeTwoLinePoint(pLeft->pLine1,(*ppLs1)->pLine,pLeft->pPoint1);
+                (*ppLs1)->pLine = pLeft->pLine1;
             }
-            //assert(*ppLs2==NULL);
-            pLoc = FindPointLoc((*ppLs1)->pLine->pHead,pLeft->pPoint1);
-            CheckGenTwoPoint(pLeft->pLine1,(*ppLs1)->pLine);
-            ResetLine(pParse,pLeft,(*ppLs1)->pLine);
-            *ppLs2 = (LineSeg*)NewLinkHead((*ppLs1)->pLine,sizeof(LineSeg));
-            InsertPointNode(pParse,pLoc,pLeft->pPoint2);
-            SetSegPoint(*ppLs2,pRight->pPoint1,pLeft->pPoint2);
-            pNew = pLeft->pPoint2;
+
+            if(*ppLs2!=NULL){
+                MergeTwoLinePoint(pLeft->pLine1,(*ppLs2)->pLine,pLeft->pPoint1);
+                (*ppLs2)->pLine = pLeft->pLine1;
+            }
+//            if(*ppLs2!=NULL){
+//                CheckGenTwoPoint(pLeft->pLine1,(*ppLs2)->pLine);
+//                FreeLine(pParse,(*ppLs2)->pLine);
+//                Free(*ppLs2);
+//                *ppLs2 = NULL;
+//            }
+//            //assert(*ppLs2==NULL);
+//            pLoc = FindPointLoc((*ppLs1)->pLine->pHead,pLeft->pPoint1);
+//            CheckGenTwoPoint(pLeft->pLine1,(*ppLs1)->pLine);
+//            ResetLine(pParse,pLeft,(*ppLs1)->pLine);
+//            *ppLs2 = (LineSeg*)NewLinkHead((*ppLs1)->pLine,sizeof(LineSeg));
+//            InsertPointNode(pParse,pLoc,pLeft->pPoint2);
+//            SetSegPoint(*ppLs2,pRight->pPoint1,pLeft->pPoint2);
+//            pNew = pLeft->pPoint2;
         }
         else{
-            SetLineSegPoint(pParse,ppLs1,ppLs2,pLeft,pRight,0);
-            pNew = pRight->pPoint1;
+            pSeg = CreateNewLine(pParse,pLeft->pPoint1,pLeft->pPoint2);
+            InsertSegPoint(pParse,pSeg,pRight->pPoint1);
+            *ppLs1 = SetLineSegPoint(pSeg,pLeft->pPoint1,pRight->pPoint1);
+            *ppLs2 = SetLineSegPoint(pSeg,pLeft->pPoint2,pRight->pPoint1);
+           // SetLineSegPoint(pParse,ppLs1,ppLs2,pLeft,pRight,0);
+            CheckNewSeg(pParse,pRight->pPoint1,(*ppLs1)->pLine);
         }
-        CheckNewSeg(pParse,pNew,(*ppLs1)->pLine);
+#endif
+        if(*ppLs1!=NULL){
+            MergeTwoLinePoint(pLeft->pLine1,(*ppLs1)->pLine,pLeft->pPoint2);
+            //assert(pPub->pPoint==pLeft->pPoint2);
+            (*ppLs1)->pLine = pLeft->pLine1;
+        }
+        else if(*ppLs2!=NULL){
+            MergeTwoLinePoint(pLeft->pLine1,(*ppLs2)->pLine,NULL);
+            (*ppLs2)->pLine = pLeft->pLine1;
+        }
+        else
+        {
+            pSeg = CreateNewLine(pParse,pLeft->pPoint1,pLeft->pPoint2);
+            InsertSegPoint(pParse,pSeg,pRight->pPoint1,0);
+            *ppLs1 = SetLineSegPoint(pSeg,pLeft->pPoint1,pRight->pPoint1);
+            *ppLs2 = SetLineSegPoint(pSeg,pLeft->pPoint2,pRight->pPoint1);
+           // SetLineSegPoint(pParse,ppLs1,ppLs2,pLeft,pRight,0);
+            CheckNewSeg(pParse,pRight->pPoint1,(*ppLs1)->pLine);
+        }
+
     }
     else
     {
@@ -788,23 +925,6 @@ int GetPlanesegDirect(PlaneData *pPlane,LineData *pLine1,LineData *pLine2)
     }
     assert(rc!=0);
     return rc;
-}
-
-PoinData *GetIntersection(AstParse *pParse,LineData *pLine1,LineData *pLine2)
-{
-    LinePoint *p1,*p2;
-    PoinData *pPoint = NULL;
-    for(p1=pLine1->pHead->pNext;!p1->isHead;p1=p1->pNext)
-    {
-        for(p2=pLine2->pHead->pNext;!p2->isHead;p2=p2->pNext)
-        {
-            if(p1->pPoint==p2->pPoint){
-                pPoint = p1->pPoint;
-                break;
-            }
-        }
-    }
-    return pPoint;
 }
 
 LinkNode *GetLinkNode(LinkNode *pHead,void *pVal)
@@ -1664,6 +1784,7 @@ GeomType SetGeomHash(AstParse *pParse,TokenInfo *pAst)
         pPoint = (PoinData *)Malloc(sizeof(PoinData));
         memset(pPoint,0,sizeof(PoinData));
         pPoint->iNum = pSet->nPoint++;
+        pPoint->pParse = pParse;
         pSet->ppArray[pPoint->iNum] = pPoint;
         pPoint->zSymb = (char*)Malloc(pAst->nSymbLen+1);
         memcpy(pPoint->zSymb,pAst->zSymb,pAst->nSymbLen+1);

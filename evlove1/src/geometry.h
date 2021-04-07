@@ -138,6 +138,7 @@ struct PoinData
 {
     int iNum;
     char *zSymb;
+    AstParse *pParse;
     LineSeg **ppSeg;
     PlaneData *pPlane;
     u8 isInf;
@@ -206,5 +207,7 @@ int InsertCommonPair(AstParse *pParse,LinkNode **ppSame,
         void *pSeg2);
 PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle);
 LineSeg** GetLineSegAddr(PoinData *pLeft,PoinData *pRight);
+LinkNode *GetLinkNode(LinkNode *pHead,void *pVal);
+void CheckNewSeg(AstParse *pParse,PoinData *pNew,LineData *pLine);
 
 #endif /* GEOMETRY_H_ */
