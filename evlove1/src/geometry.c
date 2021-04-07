@@ -185,7 +185,7 @@ void PrintParall(CornerInfo *pCorner){
     apSeg[1] = *GetLineSegAddr(pCorner->pRight,pCorner->pVertex);
     log_c("parallel:");
     PrintLine(apSeg[0]->pLine);
-    log_c("//");
+    log_c("// ");
     PrintLine(apSeg[1]->pLine);
     log_c("\n");
 }
@@ -283,9 +283,11 @@ void FreePointSet(AstParse *pParse)
     }
     for(i=0;i<pLineSet->nLine;i++)
     {
-        FreeLinePoint(pParse,pLineSet->ppLine[i]->pHead);
-        FreePlaneSeg(pLineSet->ppLine[i]);
-        Free(pLineSet->ppLine[i]);
+        if(pLineSet->ppLine[i]!=NULL){
+            FreeLinePoint(pParse,pLineSet->ppLine[i]->pHead);
+            FreePlaneSeg(pLineSet->ppLine[i]);
+            Free(pLineSet->ppLine[i]);
+        }
     }
     for(i=0;i<pPointSet->nPoint;i++)
     {
@@ -441,20 +443,61 @@ PlaneSeg* GetPlaneSeg(LineData *pLeft,LineData *pRight)
     }
 }
 
+void FreeLine(AstParse *pParse,LineData *pLine)
+{
+    LineHash *pLineSet = pParse->pLineSet;
+    pLineSet->ppLine[pLine->iNum] = NULL;
+    //pLineSet->nLine--;//todo 有些线条在中途被释放了怎么办
+    FreeLinePoint(pParse,pLine->pHead);
+    FreePlaneSeg(pLine);
+   // Free(pLine->ppSeg);
+    Free(pLine);
+}
+
+void CheckGenTwoPoint(LineData *pLine1,LineData *pLine2)
+{
+    LinePoint *p1;
+    LinePoint *p2;
+    PoinData *aRecoard[5];
+    int nInterSection = 0;
+    printf("--1--\n");
+    TravLinePoint(pLine1);
+    printf("--2--\n");
+    TravLinePoint(pLine2);
+    for(p1=pLine1->pHead->pNext;!p1->isHead;p1=p1->pNext)
+    {
+        //if(p1->pPoint==NULL) continue;
+        assert(p1->pPoint!=NULL);
+        for(p2=pLine2->pHead->pNext;!p2->isHead;p2=p2->pNext)
+        {
+            assert(p2->pPoint!=NULL);
+          //  if(p2->pPoint==NULL) continue;
+            if(p1->pPoint==p2->pPoint){
+                aRecoard[nInterSection] = p1->pPoint;
+                nInterSection++;
+            }
+        }
+    }
+    if(pLine1->pHead->pPoint!=NULL){
+        if(pLine1->pHead->pPoint==pLine2->pHead->pPoint){
+            nInterSection++;
+        }
+    }
+    assert(nInterSection<2);
+}
+
 void ResetLine(AstParse *pParse,GeomType *pDst,LineData *pLine)
 {
     LineSeg* pSeg;
-    int nLine;
-    LineHash *pLineSet = pParse->pLineSet;
+//    LineHash *pLineSet = pParse->pLineSet;
 
     pSeg = CreateNewLine(pParse,pDst->pPoint1,pDst->pPoint2);
     log_c("reset: ");
-    nLine = --pParse->pLineSet->nLine;
-    //todo 确认pDst->pLine1是否是最后一个
-    assert(pLineSet->ppLine[nLine]==pDst->pLine1);
-    FreeLinePoint(pParse,pDst->pLine1->pHead);
-    Free(pDst->pLine1->ppSeg);
-    Free(pDst->pLine1);
+    FreeLine(pParse,pDst->pLine1);
+   // --pParse->pLineSet->nLine;
+//    FreeLinePoint(pParse,pDst->pLine1->pHead);
+//    Free(pDst->pLine1->ppSeg);
+//    Free(pDst->pLine1);
     pSeg->pLine = pLine;
 }
 
@@ -467,7 +510,6 @@ LineSeg *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight)
     memset(pNew,0,sizeof(LineData));
     pSeg = (LineSeg*)NewLinkHead(pNew,sizeof(LineSeg));
     pLeft->ppSeg[iRight] = pSeg;
-    pLeft->nArray++;
     pNew->iNum = pLineSet->nLine;
     if(pLineSet->nLine>pLineSet->nSlot){
         //todo resizeHash
@@ -621,6 +663,7 @@ void CheckNewSeg(AstParse *pParse,PoinData *pNew,LineData *pLine)
     }
 }
 
+
 GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
 {
     GeomType ele = {0};
@@ -657,17 +700,21 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
     {
         ppLs1 = GetLineSegAddr(pRight->pPoint1,pLeft->pPoint1);
         ppLs2 = GetLineSegAddr(pRight->pPoint1,pLeft->pPoint2);
-        if(*ppLs1!=NULL){
-            assert(*ppLs2==NULL);
+        if(*ppLs1!=NULL || *ppLs2!=NULL){
+            if(*ppLs2!=NULL){
+                CheckGenTwoPoint(pLeft->pLine1,(*ppLs2)->pLine);
+                FreeLine(pParse,(*ppLs2)->pLine);
+                Free(*ppLs2);
+                *ppLs2 = NULL;
+            }
+            //assert(*ppLs2==NULL);
             pLoc = FindPointLoc((*ppLs1)->pLine->pHead,pLeft->pPoint1);
+            CheckGenTwoPoint(pLeft->pLine1,(*ppLs1)->pLine);
             ResetLine(pParse,pLeft,(*ppLs1)->pLine);
             *ppLs2 = (LineSeg*)NewLinkHead((*ppLs1)->pLine,sizeof(LineSeg));
             InsertPointNode(pParse,pLoc,pLeft->pPoint2);
             SetSegPoint(*ppLs2,pRight->pPoint1,pLeft->pPoint2);
             pNew = pLeft->pPoint2;
-        }
-        else if(*ppLs2!=NULL){
-            assert(0);
         }
         else{
             SetLineSegPoint(pParse,ppLs1,ppLs2,pLeft,pRight,0);

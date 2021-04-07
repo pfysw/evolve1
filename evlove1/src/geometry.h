@@ -137,7 +137,6 @@ struct CommanPair
 struct PoinData
 {
     int iNum;
-    int nArray;
     char *zSymb;
     LineSeg **ppSeg;
     PlaneData *pPlane;
