@@ -12,7 +12,7 @@
 #include "db.h"
 #include "geometry.h"
 
-#define FREE_TEST
+//#define FREE_TEST
 
 MemInfo g_mem = {0};
 

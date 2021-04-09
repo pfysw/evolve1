@@ -81,7 +81,7 @@ typedef struct PlaneSeg PlaneSeg;
 struct PlaneSeg
 {
     //距离相等的两条平行线
-    PlaneSeg *pNext;
+    PlaneSeg*pNext;
     PlaneSeg *pPre;
     PlaneData *pPlane;
     u8 isHead;
@@ -96,6 +96,7 @@ struct LineData
     int nArray;
     LinePoint *pHead;
     PlaneSeg **ppSeg;
+    u8 bImage;
 };
 
 typedef struct LineSeg LineSeg;
