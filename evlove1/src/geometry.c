@@ -262,7 +262,9 @@ void FreePlaneSeg(LineData *pArray)
             if(pArray->ppSeg[i]->pCorner){
                 Free(pArray->ppSeg[i]->pCorner);
             }
-            Free(pArray->ppSeg[i]);
+            assert(pArray->ppSeg[i]->isHead);
+            FreeLinkNode((LinkNode *)pArray->ppSeg[i],0);
+            //Free(pArray->ppSeg[i]);
             pArray->ppSeg[i] = NULL;
         }
     }
@@ -283,11 +285,11 @@ void FreePointSet(AstParse *pParse)
     }
     for(i=0;i<pLineSet->nLine;i++)
     {
-        if(pLineSet->ppLine[i]!=NULL){
+        if(!pLineSet->ppLine[i]->bImage){
             FreeLinePoint(pParse,pLineSet->ppLine[i]->pHead);
             FreePlaneSeg(pLineSet->ppLine[i]);
-            Free(pLineSet->ppLine[i]);
         }
+        Free(pLineSet->ppLine[i]);
     }
     for(i=0;i<pPointSet->nPoint;i++)
     {
@@ -500,19 +502,33 @@ void ResetPlaneSeg(AstParse *pParse,LineData *pLine1,LineData *pLine2)
 
     for(i=0;i<pLineSet->nLine;i++)
     {
+        if(pLineSet->ppLine[i]->bImage) continue;
+
         ppSeg2 = GetPlaneSegAddr(pParse,pLine2,pLineSet->ppLine[i]);
-        if(ppSeg2!= NULL){
-            ppSeg1 = GetPlaneSegAddr(pParse,pLine1,pLineSet->ppLine[i]);
-            if((*ppSeg1)==NULL){
-                *ppSeg1 = *ppSeg2;
+        if(*ppSeg2!= NULL){
+            //pLine2->iNum：5 pLineSet->ppLine[i]->iNum：5  pLine1->iNum:3
+            //5-5 不应该转移到5-3，因为直线5已经转移了，应该把5-5转移到3-3
+            if(pLine2->iNum==pLineSet->ppLine[i]->iNum){
+                ppSeg1 = GetPlaneSegAddr(pParse,pLine1,pLine1);
             }
             else{
+                ppSeg1 = GetPlaneSegAddr(pParse,pLine1,pLineSet->ppLine[i]);
+            }
+
+            if((*ppSeg1)==NULL){
+                log_a("ppLine null %d:",i);
+                TravLinePoint(pLineSet->ppLine[i]);
+                *ppSeg1 = *ppSeg2;
+                *ppSeg2 = NULL;
+            }
+            else{
+                assert(*ppSeg1!=*ppSeg2);
                 log_a("ppLine %d:",i);
                 TravLinePoint(pLineSet->ppLine[i]);
-                log_a("pLine2 %d:",pLine2->iNum);
-                TravLinePoint(pLine2);
-                log_a("pLine1 %d:",pLine1->iNum);
-                TravLinePoint(pLine1);
+//                log_a("pLine2 %d:",pLine2->iNum);
+//                TravLinePoint(pLine2);
+//                log_a("pLine1 %d:",pLine1->iNum);
+//                TravLinePoint(pLine1);
                 LinkLineSame(pParse,ppSeg1,ppSeg2);
                 LinkSegNode(pParse,(LinkNode *)*ppSeg1,(LinkNode *)*ppSeg2);
                 if((*ppSeg2)->pCorner!=NULL){
@@ -527,6 +543,7 @@ void ResetPlaneSeg(AstParse *pParse,LineData *pLine1,LineData *pLine2)
     pLine2->ppSeg = NULL;
     //-------------------------
     pLine2->iNum = pLine1->iNum;
+    pLine2->bImage = 1;
 }
 
 PoinData *GetIntersection(LineData *pLine1,LineData *pLine2)
@@ -554,9 +571,9 @@ void MergeTwoLinePoint(LineData *pLine1,LineData *pLine2,PoinData *pRigth)
     AstParse *pParse;
     PoinData *pInter;
 
-    printf("--1--\n");
+    printf("--1:%d--\n",pLine1->iNum);
     TravLinePoint(pLine1);
-    printf("--2--\n");
+    printf("--2:%d--\n",pLine2->iNum);
     TravLinePoint(pLine2);
     pInter = GetIntersection(pLine1,pLine2);
     assert(pInter!=NULL);
@@ -1672,6 +1689,7 @@ PlaneSeg *SetPlaneHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
     int iRight;
     PlaneData *pPlane;
     PlaneSeg *pSeg;
+    LineData **ppLine = pParse->pLineSet->ppLine;
 
     assert(pLeft->type==ELE_LINE);
     assert(pRight->type==ELE_LINE);
@@ -1688,7 +1706,8 @@ PlaneSeg *SetPlaneHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
 //            InsertLinkNode(pParse,pPlane->pHead->pNext,pRight->pLine1);
         }
         else{
-            pSeg = pLeft->pLine1->ppSeg[iRight];
+            pSeg = ppLine[pLeft->pLine1->iNum]->ppSeg[iRight];
+          //  pSeg = pLeft->pLine1->ppSeg[iRight];
             pPlane = pSeg->pPlane;
         }
     }
@@ -1702,7 +1721,8 @@ PlaneSeg *SetPlaneHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
 //            InsertLinkNode(pParse,pPlane->pHead->pNext,pRight->pLine1);
         }
         else{
-            pSeg = pRight->pLine1->ppSeg[iLeft];
+            pSeg = ppLine[pRight->pLine1->iNum]->ppSeg[iLeft];
+           // pSeg = pRight->pLine1->ppSeg[iLeft];
             pPlane = pSeg->pPlane;
         }
     }

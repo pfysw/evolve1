@@ -20,7 +20,7 @@ void *addr_buf[1000] = {0};
 void* Malloc(u32 size){
     void *p = malloc(size);
 #ifdef FREE_TEST
-    if(g_mem.malloc_cnt==381){
+    if(g_mem.malloc_cnt==364){
         printf("mal\n");
     }
     addr_buf[g_mem.malloc_cnt] = p;
