@@ -14,5 +14,7 @@ struct TrigInfo{
 };
 
 TrigInfo *SetTriangleObj(AstParse *pParse,TempInfo *pTemp);
+void CheckSAS(PlaneSeg *pPSeg,SameLine *pS,SameAngle *pA,AngleTemp *pTemp);
+void SetEqualTrgl(AstParse *pParse,TempInfo *pTemp);
 
 #endif /* TRIANGLE_H_ */

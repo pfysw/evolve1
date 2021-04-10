@@ -210,5 +210,7 @@ PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle);
 LineSeg** GetLineSegAddr(PoinData *pLeft,PoinData *pRight);
 LinkNode *GetLinkNode(LinkNode *pHead,void *pVal);
 void CheckNewSeg(AstParse *pParse,PoinData *pNew,LineData *pLine);
+GeomType GetLineEle(LineData *p);
+PlaneSeg** GetPlaneSegAddr(AstParse *pParse,LineData *pLeft,LineData *pRight);
 
 #endif /* GEOMETRY_H_ */
