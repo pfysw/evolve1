@@ -57,9 +57,9 @@ PlaneHash *CreatPlaneHash(int nSlot)
     return pPlaneSet;
 }
 
-void FreeLinePoint(AstParse *pParse,LinePoint *pHead)
+void FreeLinePoint(AstParse *pParse,LineData *pLine)
 {
-    LinePoint *p = pHead->pNext;
+    LinePoint *p = pLine->pHead->pNext;
     LinePoint *pTmp;
 
 //      static int jj = 0;
@@ -68,7 +68,7 @@ void FreeLinePoint(AstParse *pParse,LinePoint *pHead)
 //          printf("jj %d\n",jj);
 
     if(gDebug.freePrint){
-        log_c("line: ");
+        log_c("line %d: ",pLine->iNum);
     }
     while(1)
     {
@@ -286,8 +286,12 @@ void FreePointSet(AstParse *pParse)
     for(i=0;i<pLineSet->nLine;i++)
     {
         if(!pLineSet->ppLine[i]->bImage){
-            FreeLinePoint(pParse,pLineSet->ppLine[i]->pHead);
+            FreeLinePoint(pParse,pLineSet->ppLine[i]);
             FreePlaneSeg(pLineSet->ppLine[i]);
+        }
+        else if(pLineSet->ppLine[i]->pHead){
+            FreeLinkNode((LinkNode *)pLineSet->ppLine[i]->pHead,0);
+            //FreeLinePoint(pParse,pLineSet->ppLine[i]);
         }
         Free(pLineSet->ppLine[i]);
     }
@@ -500,6 +504,7 @@ void ResetPlaneSeg(AstParse *pParse,LineData *pLine1,LineData *pLine2)
     PlaneSeg** ppSeg1;
     PlaneSeg** ppSeg2;
 
+    assert(pLine1->iNum!=pLine2->iNum);
     for(i=0;i<pLineSet->nLine;i++)
     {
         if(pLineSet->ppLine[i]->bImage) continue;
@@ -516,15 +521,15 @@ void ResetPlaneSeg(AstParse *pParse,LineData *pLine1,LineData *pLine2)
             }
 
             if((*ppSeg1)==NULL){
-                log_a("ppLine null %d:",i);
-                TravLinePoint(pLineSet->ppLine[i]);
+//                log_a("ppLine null %d:",i);
+//                TravLinePoint(pLineSet->ppLine[i]);
                 *ppSeg1 = *ppSeg2;
                 *ppSeg2 = NULL;
             }
             else{
                 assert(*ppSeg1!=*ppSeg2);
-                log_a("ppLine %d:",i);
-                TravLinePoint(pLineSet->ppLine[i]);
+//                log_a("ppLine %d:",i);
+//                TravLinePoint(pLineSet->ppLine[i]);
                 LinkLineSame(pParse,ppSeg1,ppSeg2);
                 LinkSegNode(pParse,(LinkNode *)*ppSeg1,(LinkNode *)*ppSeg2);
                 if((*ppSeg2)->pCorner!=NULL){
@@ -607,10 +612,12 @@ void MergeTwoLinePoint(LineData *pLine1,LineData *pLine2,PoinData *pRigth)
         assert(pLine1->pHead->pPoint==NULL);
         pLine1->pHead->pPoint = pLine2->pHead->pPoint;
     }
-    Free(pLine2->pHead);
+    //Free(pLine2->pHead);
     Free(p2);
-    pLine2->pHead = pLine1->pHead;
-    ResetPlaneSeg(pParse,pLine1,pLine2);
+    pLine2->pHead->pNext = pLine2->pHead;
+    pLine2->pHead->pPre = pLine2->pHead;
+
+   // ResetPlaneSeg(pParse,pLine1,pLine2);
 //    printf("--r--\n");
 //    TravLinePoint(pLine1);
 //    printf("pR %s\n",pRigth->zSymb);
@@ -762,8 +769,11 @@ void CheckNewSeg(AstParse *pParse,PoinData *pNew,LineData *pLine)
             *ppLSeg = (LineSeg*)NewLinkHead(pLine,sizeof(LineSeg));
             SetSegPoint(*ppLSeg,pNew,p->pPoint);
         }
-        else
+        else if((*ppLSeg)->pLine != pLine)
         {
+            assert((*ppLSeg)->pLine!=NULL);
+            assert(pLine!=NULL);
+            ResetPlaneSeg(pParse,pLine,(*ppLSeg)->pLine);
             (*ppLSeg)->pLine = pLine;
         }
         p = p->pNext;
@@ -814,12 +824,15 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
     {
         assert(0);//未测试
         assert(pRight->type==ELE_LINE);
-//        ppLs1 = GetLineSegAddr(pLeft->pPoint1,pRight->pPoint1);
-//        ppLs2 = GetLineSegAddr(pLeft->pPoint1,pRight->pPoint2);
-//        assert(*ppLs1==NULL);
-//        assert(*ppLs2==NULL);
-//        SetLineSegPoint(pParse,ppLs1,ppLs2,pRight,pLeft,1);
-//        CheckNewSeg(pParse,pLeft->pPoint1,(*ppLs1)->pLine);
+        ppLs1 = GetLineSegAddr(pLeft->pPoint1,pRight->pPoint1);
+        ppLs2 = GetLineSegAddr(pLeft->pPoint1,pRight->pPoint2);
+        assert(*ppLs1==NULL);
+        assert(*ppLs2==NULL);
+        pSeg = CreateNewLine(pParse,pRight->pPoint1,pRight->pPoint2);
+        InsertSegPoint(pParse,pSeg,pLeft->pPoint1,0);
+        *ppLs1 = SetLineSegPoint(pSeg,pLeft->pPoint1,pRight->pPoint1);
+        *ppLs2 = SetLineSegPoint(pSeg,pLeft->pPoint1,pRight->pPoint2);
+        CheckNewSeg(pParse,pLeft->pPoint1,(*ppLs1)->pLine);
     }
     else if(pLeft->type==ELE_LINE)
     {
@@ -844,7 +857,7 @@ GeomType SetLineHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
         }
         dir1 = GetLinesegDirect(pLeft->pLine1,pLeft->pPoint1,pLeft->pPoint2);
         dir2 = GetLinesegDirect(pLeft->pLine1,pLeft->pPoint2,pRight->pPoint1);
-        assert(dir1==dir2);
+        //assert(dir1==dir2);
     }
     else
     {

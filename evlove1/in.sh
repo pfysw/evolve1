@@ -12,7 +12,7 @@ A->(B-C);
 A-D;
 O1-D;
 (A-O1)-D;
-(B-C)-O3;
+//(B-C)-O3;
 end;
 ((exist B)->(A-C))val 60;
 (B-C)-(exist D);
