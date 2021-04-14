@@ -1028,48 +1028,18 @@ insert_end:
     return rc;
 }
 
-//LineData *GetCutLine(AstParse *pParse,GeomType *pAngle){
-//    LineData *pCut;
-//    return pCut;
-//}
-
-//void InsertPlaneAngle1(AstParse *pParse,GeomType *pAngle)
-//{
-//    LineData *pBase;
-//    LinkNode *pHead;
-//    LinkNode *pNode;
-//    LinkNode *p;
-//    int rc = 0;
-//    PoinData *apPoint[2];
-//
-//    apPoint[0] = pAngle->pPoint1;
-//    apPoint[1] = pAngle->pPoint2;
-//    pBase = (*GetLineSegAddr(apPoint[0],apPoint[1]))->pLine;
-//    for(int i=0;i<2;i++){
-//        pHead = apPoint[i]->pPlane->pHead;
-//        pNode = GetLinkNode(pHead,pBase);
-//        assert(pNode!=NULL);
-//        for(p=pNode;;){
-//            pBase = (LineData *)pNode->pVal;
-//            rc = InsertPlaneLine(pParse,pAngle->pVertex,apPoint[i],pBase);
-//            if(rc) break;
-//            p = p->pNext;
-//            assert(p!=pNode);
-//        }
-//    }
-//    PrintPlaneLine(pAngle->pVertex);
-//}
-
+/*
+ * 三角形ABC，O3是AB的中点，过一点B做CO3的平行线,D在这条平行线上
+ * 那么这条平行线必定在角ABC的外侧，因为角ABD=AO3C=ABC+O3CB>ABC
+ * 下面这个算法在插入直线BD时无法确定BD与直线AB和BC的关系，设O1是BC中点
+ * 这个算法要求D必须事先确定在AO1的延长线上，实际上这个条件不是必须的
+ */
 
 void InsertPlaneAngle(AstParse *pParse,GeomType *pAngle)
 {
     LineData *pBase;
-    LinkNode *pHead;
-    LinkNode *pNode;
-    LinkNode *p;
     int rc1 = 0;
     int rc2 = 0;
-    PoinData *apPoint[2];
     LinePoint *apNode[2];
     LinePoint *p1,*p2;
     LineSeg *pSeg;
@@ -1097,6 +1067,7 @@ void InsertPlaneAngle(AstParse *pParse,GeomType *pAngle)
         }
     }
 insert_finish:
+    assert(rc1+rc2==2);
     PrintPlaneLine(pAngle->pVertex);
 }
 
