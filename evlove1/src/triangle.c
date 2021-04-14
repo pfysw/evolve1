@@ -186,3 +186,117 @@ TrigInfo *SetTriangleObj(AstParse *pParse,TempInfo *pTemp)
     }
     return pFind;
 }
+
+
+//---------------------------
+
+void PrintParall(CornerInfo *pCorner){
+    LineSeg* apSeg[2];
+    apSeg[0] = *GetLineSegAddr(pCorner->pLeft,pCorner->pVertex);
+    apSeg[1] = *GetLineSegAddr(pCorner->pRight,pCorner->pVertex);
+    log_c("parallel:");
+    PrintLine(apSeg[0]->pLine);
+    log_c("// ");
+    PrintLine(apSeg[1]->pLine);
+    log_c("\n");
+}
+
+void SetParallAngle(CornerInfo *pCorner){
+    LineSeg* apSeg[2];
+    LinePoint *p1,*p2;
+    PlaneSeg *apPSeg[2];
+    AstParse *pParse = pCorner->pLeft->pParse;
+    LineSeg* apBottom[2];
+    LinePoint *apPoint[2][2];
+    LinePoint *pNode;
+    LineSeg* pCross;
+    PoinData *pNew;
+    int dir;
+    int bl,br;
+
+    apSeg[0] = *GetLineSegAddr(pCorner->pLeft,pCorner->pVertex);
+    apSeg[1] = *GetLineSegAddr(pCorner->pRight,pCorner->pVertex);
+    for(p1=apSeg[0]->pLine->pHead->pNext;!p1->isHead;p1=p1->pNext)
+    {
+        for(p2=apSeg[1]->pLine->pHead->pNext;!p2->isHead;p2=p2->pNext)
+        {
+            pCross = CreateNewLine(pParse,p1->pPoint,p2->pPoint);
+            dir = GetLinesegDirect(pCross->pLine,p1->pPoint,p2->pPoint);
+            printf("dir %s%s:%d\n",p1->pPoint->zSymb,p2->pPoint->zSymb,dir);
+            pNode = (LinePoint *)GetLinkNode((LinkNode *)apSeg[0]->pLine->pHead,p1->pPoint);
+            apBottom[0] = CreateNewLine(pParse,p2->pPoint,pNode->pNext->pPoint);
+            apPSeg[0] = GetAndSetAngle(pParse,p1->pPoint,apBottom[0]);
+            assert(apPSeg[0]->pCorner->pLine1==pCross->pLine);
+            bl = GetLinesegDirect(pCross->pLine,p1->pPoint,p2->pPoint);
+            assert(apPSeg[0]->pCorner->bl==bl);
+
+//            if(pNode->pNext->isHead){
+//                pNew = NewPointObj(pParse);
+//                InsertPointNode(pParse,pNode,pNew);
+//            }
+//            pNode = pNode->pNext;
+//            apBottom[0] = *GetLineSegAddr(p2->pPoint,pNode->pPoint);
+//            apPSeg[0] = GetAndSetAngle(pParse,p1->pPoint,apBottom[0]);
+        }
+    }
+}
+
+
+void InsertInfnite(AstParse *pParse,PoinData *pPoint,LineSeg* pSeg)
+{
+    LineSeg** ppLs1;
+    LineSeg** ppLs2;
+
+    ppLs1 = GetLineSegAddr(pPoint,pSeg->pLeft);
+    ppLs2 = GetLineSegAddr(pPoint,pSeg->pRight);
+    assert(*ppLs1==NULL);
+    assert(*ppLs2==NULL);
+    *ppLs1 = (LineSeg*)NewLinkHead(pSeg->pLine,sizeof(LineSeg));
+    *ppLs2 = (LineSeg*)NewLinkHead(pSeg->pLine,sizeof(LineSeg));
+    SetSegPoint(*ppLs1,pPoint,pSeg->pLeft);
+    SetSegPoint(*ppLs2,pPoint,pSeg->pRight);
+    CheckNewSeg(pParse,pPoint,(*ppLs1)->pLine);
+}
+
+void SetParallel(AstParse *pParse,GeomType *pLeft,GeomType *pRight)
+{
+    LinePoint *apHead[2];
+    PoinData *pInf;
+    LineSeg* apSide[2];
+    GeomType ele;
+    PlaneSeg *pPSeg;
+    int bl;
+    int br;
+
+    apHead[0] = pLeft->pLine1->pHead;
+    apHead[1] = pRight->pLine1->pHead;
+    apSide[0] = *GetLineSegAddr(pLeft->pPoint1,pLeft->pPoint2);
+    apSide[1] = *GetLineSegAddr(pRight->pPoint1,pRight->pPoint2);
+    bl = GetLinesegDirect(pLeft->pLine1,pLeft->pPoint1,pLeft->pPoint2);
+    br = GetLinesegDirect(pRight->pLine1,pRight->pPoint1,pRight->pPoint2);
+    assert(bl==br);
+    if(apHead[0]->pPoint==NULL&&apHead[1]->pPoint==NULL){
+        pInf = NewPointObj(pParse);
+        pInf->zSymb = Malloc(10);
+        sprintf(pInf->zSymb,"_%d_",pInf->iNum);
+        pInf->isInf = 1;
+        apHead[0]->pPoint = pInf;
+        apHead[1]->pPoint = pInf;
+        InsertInfnite(pParse,pInf,apSide[0]);
+        InsertInfnite(pParse,pInf,apSide[1]);
+
+        ele.type = ELE_ANGLE;
+        ele.pVertex = pInf;
+        ele.pLine1 = apSide[0]->pLine;
+        ele.pLine2 = apSide[1]->pLine;
+        ele.pPoint1 = pLeft->pPoint1;
+        ele.pPoint2 = pRight->pPoint1;
+        pPSeg = SetAngleHash(pParse,&ele);
+        PrintParall(pPSeg->pCorner);
+        SetParallAngle(pPSeg->pCorner);
+    }
+    else{
+        assert(0);
+        //InsertPlaneLine
+    }
+}

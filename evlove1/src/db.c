@@ -184,15 +184,7 @@ sqlite3 * CreatSqliteConn(char *db_name)
     return db;
 }
 
-extern int dll_test();
 void SqliteReadDemo(sqlite3 *db,char *zSql);
-int sqlite3OsOpen(
-  sqlite3_vfs *pVfs,
-  const char *zPath,
-  sqlite3_file *pFile,
-  int flags,
-  int *pFlagsOut
-);
 
 void db_test()
 {

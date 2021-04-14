@@ -120,7 +120,6 @@ int main(int argc, char** argv)
    Vector *pSet;
 
    setbuf(stdout, NULL);
-
    yylex_init(&scanner);
    fd = BindScanFd(scanner,"in.sh");
    pParse = CreatAstParse();

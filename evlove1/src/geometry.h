@@ -212,5 +212,12 @@ LinkNode *GetLinkNode(LinkNode *pHead,void *pVal);
 void CheckNewSeg(AstParse *pParse,PoinData *pNew,LineData *pLine);
 GeomType GetLineEle(LineData *p);
 PlaneSeg** GetPlaneSegAddr(AstParse *pParse,LineData *pLeft,LineData *pRight);
+int GetLinesegDirect(LineData *pLine,PoinData *pPoint1,PoinData *pPoint2);
+PoinData *NewPointObj(AstParse *pParse);
+void SetSegPoint(LineSeg *pSeg,PoinData *pLeft,PoinData *pRight);
+void PrintLine(LineData *pLine);
+void SetEqualAngle(SameAngle *pA,AngleTemp *pTemp,int dir);
+void PrintSameLine(void *pVal);
+LineSeg *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight);
 
 #endif /* GEOMETRY_H_ */
