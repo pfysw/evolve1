@@ -10,7 +10,7 @@
 
 typedef struct TrigInfo TrigInfo;
 struct TrigInfo{
-    PoinData *apPoint[3];
+    PointData *apPoint[3];
 };
 
 TrigInfo *SetTriangleObj(AstParse *pParse,TempInfo *pTemp);

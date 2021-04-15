@@ -23,13 +23,13 @@
 #define DEG_60  60
 
 typedef struct LineData LineData;
-typedef struct PoinData PoinData;
+typedef struct PointData PointData;
 typedef struct LinePoint LinePoint;
 struct LinePoint
 {
     LinePoint *pNext;
     LinePoint *pPre;
-    PoinData *pPoint;
+    PointData *pPoint;
     u8 isHead;
 };
 
@@ -53,9 +53,9 @@ struct PlaneData
 typedef struct CornerInfo CornerInfo;
 struct CornerInfo
 {
-    PoinData *pVertex;
-    PoinData *pLeft;
-    PoinData *pRight;
+    PointData *pVertex;
+    PointData *pLeft;
+    PointData *pRight;
     LineData *pLine1;
     LineData *pLine2;
     int val;
@@ -67,14 +67,14 @@ typedef struct TempInfo TempInfo;
 struct TempInfo{
     int a;
     int b;
-    PoinData *apPoint[3];
+    PointData *apPoint[3];
 };
 
 typedef struct AngleTemp AngleTemp;
 struct AngleTemp{
     AstParse *pParse;
     //第一个下标表示哪个角，第二个下标表示哪条边
-    PoinData *apSide[2][2];
+    PointData *apSide[2][2];
 };
 
 typedef struct PlaneSeg PlaneSeg;
@@ -106,9 +106,9 @@ struct LineSeg
     LineSeg *pPre;
     LineData *pLine;
     u8 isHead;
-    PoinData *pLeft;
-    PoinData *pRight;
-    PoinData *pMid;
+    PointData *pLeft;
+    PointData *pRight;
+    PointData *pMid;
     LinkNode *pSame;//2个端点上还有的相等的角
     LinkNode *pTriag;
     LinkNode *pTriSame;//全等三角形
@@ -135,7 +135,7 @@ struct CommanPair
     void *pSeg2;
 };
 
-struct PoinData
+struct PointData
 {
     int iNum;
     char *zSymb;
@@ -150,8 +150,8 @@ struct PointHash
 {
     int nHash;
     int nPoint;
-    PoinData **ppHash;
-    PoinData **ppArray;
+    PointData **ppHash;
+    PointData **ppArray;
 };
 
 
@@ -177,9 +177,9 @@ struct GeomType
     u8 type;
     LineData *pLine1;
     LineData *pLine2;
-    PoinData *pPoint1;
-    PoinData *pPoint2;
-    PoinData *pVertex;
+    PointData *pPoint1;
+    PointData *pPoint2;
+    PointData *pVertex;
     CornerInfo *pCorner;
 };
 
@@ -191,13 +191,13 @@ void ParseGeomEle(AstParse *pParse,Vector *pSet);
 void CloseGeomSet(AstParse *pParse);
 SameLine *SetSamePair(AstParse *pParse,LineSeg **ppSeg1,LineSeg **ppSeg2);
 PlaneSeg *SetPlaneHash(AstParse *pParse,GeomType *pLeft,GeomType *pRight);
-LineSeg *CreateNewLine(AstParse *pParse,PoinData *pPoint1,PoinData *pPoint2);
+LineSeg *CreateNewLine(AstParse *pParse,PointData *pPoint1,PointData *pPoint2);
 void FreeSamePair(LinkNode *pSame,int type);
 void InsertSamePair(AstParse *pParse,PlaneSeg *pPSeg,
         LineSeg **ppSeg1,
         LineSeg **ppSeg2);
 void CheckOtherPair(AstParse *pParse,SameLine *pPair);
-PlaneSeg *GetAndSetAngle(AstParse *pParse,PoinData *pVertex,LineSeg* pSeg);
+PlaneSeg *GetAndSetAngle(AstParse *pParse,PointData *pVertex,LineSeg* pSeg);
 void InsertAnglePair(AstParse *pParse,LineSeg *pSeg,
         PlaneSeg *pPSeg1,
         PlaneSeg *pPSeg2);
@@ -207,17 +207,18 @@ int InsertCommonPair(AstParse *pParse,LinkNode **ppSame,
         void *pSeg1,
         void *pSeg2);
 PlaneSeg *SetAngleHash(AstParse *pParse,GeomType *pAngle);
-LineSeg** GetLineSegAddr(PoinData *pLeft,PoinData *pRight);
+LineSeg** GetLineSegAddr(PointData *pLeft,PointData *pRight);
 LinkNode *GetLinkNode(LinkNode *pHead,void *pVal);
-void CheckNewSeg(AstParse *pParse,PoinData *pNew,LineData *pLine);
+void CheckNewSeg(AstParse *pParse,PointData *pNew,LineData *pLine);
 GeomType GetLineEle(LineData *p);
 PlaneSeg** GetPlaneSegAddr(AstParse *pParse,LineData *pLeft,LineData *pRight);
-int GetLinesegDirect(LineData *pLine,PoinData *pPoint1,PoinData *pPoint2);
-PoinData *NewPointObj(AstParse *pParse);
-void SetSegPoint(LineSeg *pSeg,PoinData *pLeft,PoinData *pRight);
-void PrintLine(LineData *pLine);
+int GetLinesegDirect(LineData *pLine,PointData *pPoint1,PointData *pPoint2);
+PointData *NewPointObj(AstParse *pParse);
+void SetSegPoint(LineSeg *pSeg,PointData *pLeft,PointData *pRight);
+void PrintLine(AstParse *pParse,LineData *pLine);
 void SetEqualAngle(SameAngle *pA,AngleTemp *pTemp,int dir);
 void PrintSameLine(void *pVal);
-LineSeg *NewLineObj(AstParse *pParse,PoinData *pLeft,int iRight);
+LineSeg *NewLineObj(AstParse *pParse,PointData *pLeft,int iRight);
+LinePoint *GetLinePoint(LinePoint *pHead,PointData *pVal);
 
 #endif /* GEOMETRY_H_ */
