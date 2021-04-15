@@ -215,6 +215,7 @@ void SetParallAngle(CornerInfo *pCorner){
     int dir;
     int bl,br;
     int aDir[2][2];
+    LineSeg* apPairSeg;
 
     apSeg[0] = *GetLineSegAddr(pCorner->pLeft,pCorner->pVertex);
     apSeg[1] = *GetLineSegAddr(pCorner->pRight,pCorner->pVertex);
@@ -256,7 +257,8 @@ void SetParallAngle(CornerInfo *pCorner){
             }
             assert(aDir[0][0]!=aDir[1][0]);
             assert(aDir[0][1]!=aDir[1][1]);
-
+            apPairSeg = CreateNewLine(pParse,apPoint[0],apPoint[1]);
+            InsertAnglePair(pParse,apPairSeg,apPSeg[0],apPSeg[1]);
         }
     }
 }

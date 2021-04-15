@@ -256,8 +256,10 @@ void FreePlaneSeg(LineData *pArray)
             if(pArray->ppSeg[i]->pCorner){
                 Free(pArray->ppSeg[i]->pCorner);
             }
-            assert(pArray->ppSeg[i]->isHead);
-            FreeLinkNode((LinkNode *)pArray->ppSeg[i],0);
+            //不是head时被合入到别的链表里了
+            if((pArray->ppSeg[i]->isHead)){
+                FreeLinkNode((LinkNode *)pArray->ppSeg[i],0);
+            }
             //Free(pArray->ppSeg[i]);
             pArray->ppSeg[i] = NULL;
         }
